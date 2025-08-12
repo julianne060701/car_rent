@@ -29,39 +29,66 @@
         </div>
     </section>
 
-    <!-- Quick Booking Bar -->
-    <section class="quick-booking">
-        <div class="container">
-            <form class="booking-form" method="POST" action="process_booking.php">
-                <div class="form-group">
-                    <label for="pickup-location">Pickup Location</label>
-                    <select id="pickup-location" name="pickup_location" required>
-                        <option value="">Select Location</option>
-                        <option value="gensan-airport">GenSan Airport</option>
-                        <option value="downtown-gensan">Downtown GenSan</option>
-                        <option value="kcc-mall">KCC Mall</option>
-                        <option value="robinsons-place">Robinson's Place GenSan</option>
-                        <option value="sm-city-gensan">SM City General Santos</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="pickup-date">Pickup Date</label>
-                    <input type="date" id="pickup-date" name="pickup_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="return-date">Return Date</label>
-                    <input type="date" id="return-date" name="return_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="pickup-time">Time</label>
-                    <input type="time" id="pickup-time" name="pickup_time" value="09:00" required>
-                </div>
-                <button type="submit" class="btn btn-search">
-                    <i class="fas fa-search"></i> Find Cars
-                </button>
-            </form>
-        </div>
-    </section>
+   <!-- Quick Booking Bar -->
+<section class="quick-booking">
+    <div class="container">
+        <form class="booking-form" method="POST" action="process_booking.php">
+            <!-- Pickup Location -->
+            <div class="form-group">
+                <label for="pickup-location">Pickup Location</label>
+                <select id="pickup-location" name="pickup_location" required>
+                    <option value="">Select Location</option>
+                    <option value="gensan-airport">GenSan Airport</option>
+                    <option value="downtown-gensan">Downtown GenSan</option>
+                    <option value="kcc-mall">KCC Mall</option>
+                    <option value="robinsons-place">Robinson's Place GenSan</option>
+                    <option value="sm-city-gensan">SM City General Santos</option>
+                </select>
+            </div>
+
+            <!-- Pickup Date -->
+            <div class="form-group">
+                <label for="pickup-date">Pickup Date</label>
+                <input type="date" id="pickup-date" name="pickup_date" required>
+            </div>
+
+            <!-- Pickup Time -->
+            <div class="form-group">
+                <label for="pickup-time">Pickup Time</label>
+                <input type="time" id="pickup-time" name="pickup_time" value="09:00" required>
+            </div>
+
+            <!-- Return Date -->
+            <div class="form-group">
+                <label for="return-date">Return Date</label>
+                <input type="date" id="return-date" name="return_date" required>
+            </div>
+
+            <!-- Return Time -->
+            <div class="form-group">
+                <label for="return-time">Return Time</label>
+                <input type="time" id="return-time" name="return_time" value="09:00" required>
+            </div>
+
+            <!-- Rental Duration -->
+            <div class="form-group">
+                <label for="rental-duration">Rental Duration</label>
+                <select id="rental-duration" name="rental_duration" required>
+                    <option value="">Select Duration</option>
+                    <option value="8">8 Hours</option>
+                    <option value="12">12 Hours</option>
+                    <option value="24">24 Hours</option>
+                </select>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-search">
+                <i class="fas fa-search"></i> Find Cars
+            </button>
+        </form>
+    </div>
+</section>
+
 
     <!-- Featured Vehicles -->
 <section class="featured-vehicles" id="vehicles">
@@ -201,15 +228,6 @@
         </div>
     </section>
 
-    <!-- Call to Action -->
-    <section style="background: #e74c3c; color: white; padding: 3rem 0; text-align: center;">
-        <div class="container">
-            <h2>Ready to Hit the Road?</h2>
-            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Book your perfect vehicle now and experience the best car rental service in General Santos City</p>
-            <button class="btn btn-secondary" onclick="openBookingModal()" style="margin-right: 1rem;">Book Now</button>
-            <a href="tel:083555012" class="btn" style="background: transparent; border: 2px solid white; color: white;">Call Us: (083) 555-0123</a>
-        </div>
-    </section>
 
     <!-- Include Footer -->
     <?php include 'includes/footer.php'; ?>
