@@ -1,220 +1,278 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenSan Car Rental - General Santos City</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>GenSan Car Rentals - Your Trusted Car Rental in General Santos City</title>
+    <meta name="description" content="Premium car rentals in General Santos City. Reliable, affordable, and well-maintained vehicles for business and leisure.">
+    <meta name="keywords" content="car rental, General Santos City, GenSan, Philippines, vehicle rental">
+    
+    <!-- CSS Files -->
     <link rel="stylesheet" href="css/index.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-content">
-            <div class="loading-spinner-large"></div>
-            <p>Processing your request...</p>
-        </div>
-    </div>
-
-    <!-- Notification Container -->
-    <div id="notification" class="notification"></div>
-
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-car"></i>
-                    </div>
-                    <div class="logo-text">
-                        <h1>GenSan Car Rental</h1>
-                        <p>Your trusted partner in General Santos</p>
-                    </div>
-                </div>
-                <div class="contact-info">
-                    <div class="contact-item" onclick="copyToClipboard('(083) 552-1234')">
-                        <i class="fas fa-phone"></i>
-                        <span>(083) 552-1234</span>
-                    </div>
-                    <div class="contact-item" onclick="copyToClipboard('info@gensancarrental.com')">
-                        <i class="fas fa-envelope"></i>
-                        <span>info@gensancarrental.com</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Success Message -->
-    <div class="success-message" id="success-message">
-        <strong>Booking Successful!</strong> Thank you for choosing GenSan Car Rental. We will contact you shortly to confirm your reservation.
-    </div>
+    <!-- Include Header -->
+    <?php include 'includes/header.php'; ?>
 
     <!-- Hero Section -->
-    <section class="hero">
+    <section class="hero" id="home">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>Explore General Santos City in Comfort</h1>
+            <p>Premium car rentals for business, leisure, and everything in between</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="openBookingModal()">Book Now</button>
+                <a href="#vehicles" class="btn btn-secondary">View Fleet</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Booking Bar -->
+    <section class="quick-booking">
         <div class="container">
-            <h2>Explore General Santos & Beyond</h2>
-            <p>Quality car rentals for your adventures in the Tuna Capital of the Philippines</p>
-            
-            <!-- Booking Form -->
-            <div class="booking-form">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Pickup Date</label>
-                        <i class="fas fa-calendar form-icon"></i>
-                        <input type="date" id="pickup-date" required>
-                        <div class="error-message">Please select a pickup date</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Return Date</label>
-                        <i class="fas fa-calendar form-icon"></i>
-                        <input type="date" id="return-date" required>
-                        <div class="error-message">Please select a return date</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Pickup Time</label>
-                        <i class="fas fa-clock form-icon"></i>
-                        <select id="pickup-time">
-                            <option value="08:00">08:00</option>
-                            <option value="09:00" selected>09:00</option>
-                            <option value="10:00">10:00</option>
-                            <option value="11:00">11:00</option>
-                            <option value="12:00">12:00</option>
-                            <option value="13:00">13:00</option>
-                            <option value="14:00">14:00</option>
-                            <option value="15:00">15:00</option>
-                            <option value="16:00">16:00</option>
-                            <option value="17:00">17:00</option>
-                            <option value="18:00">18:00</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Pickup Location</label>
-                        <i class="fas fa-map-marker-alt form-icon"></i>
-                        <select id="pickup-location">
-                            <option value="Main Office - General Santos">Main Office - General Santos</option>
-                            <option value="SM City General Santos">SM City General Santos</option>
-                            <option value="Robinsons Place GenSan">Robinsons Place GenSan</option>
-                            <option value="General Santos Airport">General Santos Airport</option>
-                            <option value="KCC Mall of GenSan">KCC Mall of GenSan</option>
-                            <option value="Fitmart General Santos">Fitmart General Santos</option>
-                        </select>
-                    </div>
+            <form class="booking-form" method="POST" action="process_booking.php">
+                <div class="form-group">
+                    <label for="pickup-location">Pickup Location</label>
+                    <select id="pickup-location" name="pickup_location" required>
+                        <option value="">Select Location</option>
+                        <option value="gensan-airport">GenSan Airport</option>
+                        <option value="downtown-gensan">Downtown GenSan</option>
+                        <option value="kcc-mall">KCC Mall</option>
+                        <option value="robinsons-place">Robinson's Place GenSan</option>
+                        <option value="sm-city-gensan">SM City General Santos</option>
+                    </select>
                 </div>
-                <button class="search-btn" onclick="searchCars()">
-                    <i class="fas fa-search"></i> Search Available Cars
+                <div class="form-group">
+                    <label for="pickup-date">Pickup Date</label>
+                    <input type="date" id="pickup-date" name="pickup_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="return-date">Return Date</label>
+                    <input type="date" id="return-date" name="return_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="pickup-time">Time</label>
+                    <input type="time" id="pickup-time" name="pickup_time" value="09:00" required>
+                </div>
+                <button type="submit" class="btn btn-search">
+                    <i class="fas fa-search"></i> Find Cars
                 </button>
-            </div>
+            </form>
         </div>
     </section>
 
-    <!-- Cars Section -->
-    <section class="cars-section">
-        <div class="container">
-            <h3 class="section-title">Choose Your Perfect Ride</h3>
-            
-            <div class="cars-grid" id="cars-grid">
-                <!-- Cars will be populated by JavaScript -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Popular Destinations -->
-    <section class="destinations-section">
-        <div class="container">
-            <h3 class="section-title">Popular Destinations from GenSan</h3>
-            
-            <div class="destinations-grid" id="destinations-grid">
-                <!-- Destinations will be populated by JavaScript -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Booking Bar -->
-    <div class="booking-bar" id="booking-bar">
-        <div class="booking-bar-content">
-            <div class="selected-car-info">
-                <div class="selected-car-icon">
-                    <i class="fas fa-car"></i>
-                </div>
-                <div>
-                    <div id="selected-car-name" style="font-weight: bold; color: #2c3e50;"></div>
-                    <div id="selected-pickup-location" style="color: #7f8c8d; font-size: 14px;"></div>
-                </div>
-            </div>
-            
-            <div class="booking-actions">
-                <div style="text-align: right;">
-                    <div style="color: #7f8c8d; font-size: 14px;">Total Price</div>
-                    <div style="font-size: 24px; font-weight: bold; color: #2196F3;">
-                        <span id="selected-car-price"></span>
+    <!-- Featured Vehicles -->
+<section class="featured-vehicles" id="vehicles">
+    <div class="container">
+        <h2>Our Popular Vehicles</h2>
+        <div class="vehicle-grid">
+            <div class="vehicle-card" data-vehicle-id="1">
+                <img src="img/cars/toyota-vios.jpg" alt="Toyota Vios">
+                <div class="vehicle-info">
+                    <h3>Toyota Vios</h3>
+                    <p>Perfect for city driving and business trips</p>
+                    <div class="features">
+                        <span><i class="fas fa-users"></i> 4 Passengers</span>
+                        <span><i class="fas fa-cog"></i> Automatic</span>
+                        <span><i class="fas fa-gas-pump"></i> Fuel Efficient</span>
                     </div>
+                    <div class="price">₱1,200/day</div>
+                    <button class="btn btn-book" data-vehicle="Toyota Vios">Book Now</button>
                 </div>
-                <button class="book-now-btn" onclick="openBookingModal()">Book Now</button>
             </div>
+            <div class="vehicle-card" data-vehicle-id="2">
+                <img src="img/cars/toyota-innova.jpg" alt="Toyota Innova">
+                <div class="vehicle-info">
+                    <h3>Toyota Innova</h3>
+                    <p>Spacious family vehicle for group travels</p>
+                    <div class="features">
+                        <span><i class="fas fa-users"></i> 7 Passengers</span>
+                        <span><i class="fas fa-cog"></i> Manual</span>
+                        <span><i class="fas fa-suitcase"></i> Large Cargo</span>
+                    </div>
+                    <div class="price">₱2,000/day</div>
+                    <button class="btn btn-book" data-vehicle="Toyota Innova">Book Now</button>
+                </div>
+            </div>
+            <div class="vehicle-card" data-vehicle-id="3">
+                <img src="img/cars/honda-city.jpg" alt="Honda City">
+                <div class="vehicle-info">
+                    <h3>Honda City</h3>
+                    <p>Reliable and fuel efficient sedan</p>
+                    <div class="features">
+                        <span><i class="fas fa-users"></i> 4 Passengers</span>
+                        <span><i class="fas fa-cog"></i> CVT</span>
+                        <span><i class="fas fa-leaf"></i> Eco-Friendly</span>
+                    </div>
+                    <div class="price">₱1,300/day</div>
+                    <button class="btn btn-book" data-vehicle="Honda City">Book Now</button>
+                </div>
+            </div>
+            <div class="vehicle-card" data-vehicle-id="4">
+                <img src="img/cars/mitsubishi-xpander.jpg" alt="Mitsubishi Xpander">
+                <div class="vehicle-info">
+                    <h3>Mitsubishi Xpander</h3>
+                    <p>Modern MPV with stylish design</p>
+                    <div class="features">
+                        <span><i class="fas fa-users"></i> 7 Passengers</span>
+                        <span><i class="fas fa-cog"></i> Automatic</span>
+                        <span><i class="fas fa-shield-alt"></i> Safety Features</span>
+                    </div>
+                    <div class="price">₱1,800/day</div>
+                    <button class="btn btn-book" data-vehicle="Mitsubishi Xpander">Book Now</button>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="vehicles.php" class="btn btn-secondary">View All Vehicles</a>
         </div>
     </div>
+</section>
+
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="container">
+            <h2>Why Choose GenSan Car Rentals?</h2>
+            <div class="services-grid">
+                <div class="service-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Fully Insured</h3>
+                    <p>All our vehicles come with comprehensive insurance coverage for your safety and peace of mind</p>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-clock"></i>
+                    <h3>24/7 Support</h3>
+                    <p>Round-the-clock customer support and roadside assistance whenever you need help</p>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h3>Multiple Locations</h3>
+                    <p>Convenient pickup and drop-off points across General Santos City and nearby areas</p>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-tools"></i>
+                    <h3>Well Maintained</h3>
+                    <p>Regular maintenance and thorough inspections ensure reliable and safe vehicles</p>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <h3>Best Rates</h3>
+                    <p>Competitive pricing with no hidden fees. Get the best value for your money</p>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-user-tie"></i>
+                    <h3>Professional Service</h3>
+                    <p>Experienced staff ready to assist you with all your car rental needs</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <h2>What Our Customers Say</h2>
+            <div class="testimonial-slider">
+                <div class="testimonial active">
+                    <p>"Excellent service! The Toyota Vios was clean and well-maintained. Perfect for our GenSan business trip. Highly recommended!"</p>
+                    <div class="customer">
+                        <strong>Maria Santos</strong>
+                        <span>Business Traveler</span>
+                    </div>
+                </div>
+                <div class="testimonial">
+                    <p>"Great rates and very friendly staff. The Innova made our family vacation around South Cotabato so much easier and comfortable!"</p>
+                    <div class="customer">
+                        <strong>Juan Dela Cruz</strong>
+                        <span>Tourist</span>
+                    </div>
+                </div>
+                <div class="testimonial">
+                    <p>"Professional service from start to finish. The booking process was smooth and the car was delivered on time. Will definitely rent again!"</p>
+                    <div class="customer">
+                        <strong>Anna Reyes</strong>
+                        <span>Local Customer</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section style="background: #e74c3c; color: white; padding: 3rem 0; text-align: center;">
+        <div class="container">
+            <h2>Ready to Hit the Road?</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Book your perfect vehicle now and experience the best car rental service in General Santos City</p>
+            <button class="btn btn-secondary" onclick="openBookingModal()" style="margin-right: 1rem;">Book Now</button>
+            <a href="tel:083555012" class="btn" style="background: transparent; border: 2px solid white; color: white;">Call Us: (083) 555-0123</a>
+        </div>
+    </section>
+
+    <!-- Include Footer -->
+    <?php include 'includes/footer.php'; ?>
 
     <!-- Booking Modal -->
     <div id="booking-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeBookingModal()">&times;</span>
-            <h3>Complete Your Booking</h3>
-            
-            <form class="booking-form-modal" onsubmit="submitBooking(event)">
+            <h2>Book Your Vehicle</h2>
+            <form class="booking-modal-form" method="POST" action="process_booking.php">
+                <input type="hidden" id="selected-vehicle" name="selected_vehicle" value="">
+                
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Full Name *</label>
-                        <input type="text" name="customer_name" required>
-                        <div class="error-message">Please enter your full name</div>
+                        <label for="customer-name">Full Name *</label>
+                        <input type="text" id="customer-name" name="customer_name" required>
                     </div>
                     <div class="form-group">
-                        <label>Phone Number *</label>
-                        <input type="tel" name="customer_phone" placeholder="09123456789" required>
-                        <div class="error-message">Please enter a valid phone number</div>
+                        <label for="customer-phone">Phone Number *</label>
+                        <input type="tel" id="customer-phone" name="customer_phone" required>
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label>Email Address *</label>
-                    <input type="email" name="customer_email" required>
-                    <div class="error-message">Please enter a valid email address</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-email">Email Address *</label>
+                        <input type="email" id="customer-email" name="customer_email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="license-number">Driver's License No. *</label>
+                        <input type="text" id="license-number" name="license_number" required>
+                    </div>
                 </div>
-                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modal-pickup-date">Pickup Date *</label>
+                        <input type="date" id="modal-pickup-date" name="modal_pickup_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-return-date">Return Date *</label>
+                        <input type="date" id="modal-return-date" name="modal_return_date" required>
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>Return Time</label>
-                    <select name="return_time">
-                        <option value="08:00">08:00</option>
-                        <option value="09:00" selected>09:00</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:00">11:00</option>
-                        <option value="12:00">12:00</option>
-                        <option value="13:00">13:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
-                        <option value="17:00">17:00</option>
-                        <option value="18:00">18:00</option>
+                    <label for="pickup-location-modal">Pickup Location *</label>
+                    <select id="pickup-location-modal" name="pickup_location_modal" required>
+                        <option value="">Select Location</option>
+                        <option value="gensan-airport">GenSan Airport</option>
+                        <option value="downtown-gensan">Downtown GenSan</option>
+                        <option value="kcc-mall">KCC Mall</option>
+                        <option value="robinsons-place">Robinson's Place GenSan</option>
+                        <option value="sm-city-gensan">SM City General Santos</option>
                     </select>
                 </div>
-                
-                <div id="booking-summary" class="price-breakdown">
-                    <h4 style="margin-bottom: 15px; color: #2c3e50;">Booking Summary</h4>
-                    <div id="summary-details"></div>
+                <div class="form-group">
+                    <label for="special-requests">Special Requests</label>
+                    <textarea id="special-requests" name="special_requests" rows="3" placeholder="Any special requirements or requests..."></textarea>
                 </div>
-                
-                <button type="submit" class="submit-btn" id="submit-btn">
-                    Confirm Booking
-                </button>
+                <button type="submit" class="btn btn-primary">Submit Booking Request</button>
             </form>
         </div>
     </div>
 
-    <!-- Footer -->
-    
-    <?php include('includes/footer.php'); ?>
-
+    <!-- JavaScript Files -->
     <script src="js/index.js"></script>
 </body>
 </html>
