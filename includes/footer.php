@@ -1,50 +1,34 @@
 <?php
 // Footer include file for GenSan Car Rentals
 ?>
-<footer class="footer">
-    <div class="container">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>GenSan Car Rentals</h3>
-                <p>Your trusted partner for reliable and affordable car rentals in General Santos City and surrounding areas.</p>
-                <div class="social-media">
-                    <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+   <footer class="bg-gray-800 text-white py-12" id="contact">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-2xl font-bold mb-4">GenSan Car Rentals</h3>
+                <p class="text-gray-400">Your trusted partner for car rentals in General Santos City. We offer a wide range of vehicles for every need.</p>
+            </div>
+            <div>
+                <h4 class="text-xl font-semibold mb-4">Quick Links</h4>
+                <ul class="space-y-2">
+                    <li><a href="#home" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                    <li><a href="#vehicles" class="text-gray-400 hover:text-white transition-colors">Vehicles</a></li>
+                    <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">Services</a></li>
+                    <li><a href="#about" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-xl font-semibold mb-4">Contact Info</h4>
+                <p class="text-gray-400">Purok Malakas, Brgy. San Isidro,<br>General Santos City, Philippines</p>
+                <p class="text-gray-400 mt-2">Email: info@gensancarrentals.com</p>
+                <p class="text-gray-400">Phone: +63 912 345 6789</p>
+            </div>
+            <div>
+                <h4 class="text-xl font-semibold mb-4">Follow Us</h4>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f text-2xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter text-2xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram text-2xl"></i></a>
                 </div>
             </div>
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <ul>
-                    <li><a href="vehicles.php">Our Fleet</a></li>
-                    <li><a href="services.php">Services</a></li>
-                    <li><a href="booking.php">Book Now</a></li>
-                    <li><a href="terms.php">Terms & Conditions</a></li>
-                    <li><a href="privacy.php">Privacy Policy</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h3>Contact Info</h3>
-                <p><i class="fas fa-map-marker-alt"></i> Pioneer Avenue, General Santos City, 9500</p>
-                <p><i class="fas fa-phone"></i> (083) 555-0123</p>
-                <p><i class="fas fa-envelope"></i> info@gensanrentals.com</p>
-                <p><i class="fas fa-clock"></i> Open 24/7</p>
-            </div>
-            <div class="footer-section">
-                <h3>Service Areas</h3>
-                <ul>
-                    <li>General Santos City</li>
-                    <li>Koronadal City</li>
-                    <li>Tacurong City</li>
-                    <li>Kidapawan City</li>
-                    <li>Digos City</li>
-                    <li>Cotabato City</li>
-                </ul>
-            </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; <?php echo date('Y'); ?> GenSan Car Rentals. All rights reserved.</p>
-        </div>
-    </div>
-</footer>
+    </footer>
