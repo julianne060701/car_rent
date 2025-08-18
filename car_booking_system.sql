@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 15, 2025 at 04:43 AM
+-- Generation Time: Aug 18, 2025 at 06:24 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -29,7 +29,11 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `bookings` (
   `booking_id` int(11) NOT NULL,
-  `booking_reference` varchar(20) NOT NULL,
+  `customer_name` varchar(100) NOT NULL,
+  `customer_phone` varchar(11) NOT NULL,
+  `customer_email` varchar(50) NOT NULL,
+  `license_number` varchar(20) NOT NULL,
+  `booking_reference` varchar(20) DEFAULT NULL,
   `user_id` int(11) NOT NULL,
   `vehicle_id` int(11) NOT NULL,
   `start_date` date NOT NULL,
@@ -56,6 +60,16 @@ CREATE TABLE `bookings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `bookings`
+--
+
+INSERT INTO `bookings` (`booking_id`, `customer_name`, `customer_phone`, `customer_email`, `license_number`, `booking_reference`, `user_id`, `vehicle_id`, `start_date`, `end_date`, `start_time`, `end_time`, `pickup_location`, `return_location`, `purpose`, `passengers`, `status`, `approved_by`, `approved_at`, `rejection_reason`, `total_cost`, `mileage_start`, `mileage_end`, `fuel_level_start`, `fuel_level_end`, `damage_reported`, `damage_notes`, `late_return`, `late_fee`, `created_at`, `updated_at`) VALUES
+(1, 'sa', '1', 'sa@mail.com', '1', '', 6, 4, '2025-08-16', '2025-08-26', '09:00:00', '09:00:00', 'gensan-airport', NULL, 'sa', 1, 'pending', NULL, NULL, NULL, 9000.00, NULL, NULL, NULL, NULL, 0, NULL, 0, 0.00, '2025-08-15 04:52:49', '2025-08-15 04:52:49'),
+(4, 'as', '2', '1@mail.com', '2', 'BK202508150004', 7, 1, '2025-08-15', '2025-08-16', '09:00:00', '09:00:00', 'gensan-airport', NULL, 'na', 1, 'completed', NULL, NULL, NULL, 1500.00, NULL, NULL, NULL, NULL, 0, NULL, 0, 0.00, '2025-08-15 06:23:13', '2025-08-18 03:49:20'),
+(5, 'as', '2', 'sa@mail.com', '2', 'BK202508150005', 6, 1, '2025-08-18', '2025-08-19', '09:00:00', '09:00:00', 'gensan-airport', NULL, 'sa', 1, 'pending', NULL, NULL, NULL, 1500.00, NULL, NULL, NULL, NULL, 0, NULL, 0, 0.00, '2025-08-15 06:45:55', '2025-08-15 06:45:55'),
+(6, 'sa', '1', 'sa@mail.com', '1', 'BK202508150006', 6, 3, '2025-08-15', '2025-08-16', '09:00:00', '09:00:00', 'gensan-airport', NULL, 'sa', 1, 'pending', NULL, NULL, NULL, 1300.00, NULL, NULL, NULL, NULL, 0, NULL, 0, 0.00, '2025-08-15 06:49:36', '2025-08-15 06:49:36');
 
 -- --------------------------------------------------------
 
@@ -86,7 +100,7 @@ CREATE TABLE `cars` (
   `brand` varchar(100) NOT NULL,
   `plate_number` varchar(20) NOT NULL,
   `rate_per_day` decimal(10,2) NOT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '1 = Available, 0 = Unavailable',
+  `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '3 = Booked,2= Pending,1 = Available, 0 = unavailable ',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -133,7 +147,9 @@ INSERT INTO `users` (`user_id`, `email`, `password_hash`, `first_name`, `last_na
 (1, 'admin@carbook.com', '$2y$10$example_hashed_password_admin123', 'System', 'Administrator', NULL, 'EMP001', 'IT', 'admin', 'active', NULL, '2025-08-13 08:24:35', '2025-08-13 08:24:35', NULL, NULL, NULL),
 (2, 'manager@carbook.com', '$2y$10$example_hashed_password_manager123', 'Fleet', 'Manager', NULL, 'EMP002', 'Operations', 'admin', 'active', NULL, '2025-08-13 08:24:35', '2025-08-13 08:24:35', NULL, NULL, NULL),
 (3, 'staff@carbook.com', '$2y$10$example_hashed_password_staff123', 'John', 'Staff', NULL, 'EMP003', 'Sales', 'staff', 'active', NULL, '2025-08-13 08:24:35', '2025-08-13 08:24:35', NULL, NULL, NULL),
-(4, 'supervisor@carbook.com', '$2y$10$example_hashed_password_super123', 'Jane', 'Supervisor', NULL, 'EMP004', 'Marketing', 'staff', 'active', NULL, '2025-08-13 08:24:35', '2025-08-13 08:24:35', NULL, NULL, NULL);
+(4, 'supervisor@carbook.com', '$2y$10$example_hashed_password_super123', 'Jane', 'Supervisor', NULL, 'EMP004', 'Marketing', 'staff', 'active', NULL, '2025-08-13 08:24:35', '2025-08-13 08:24:35', NULL, NULL, NULL),
+(6, 'sa@mail.com', '$2y$10$vfbsLVEM8boCd5DrAF3X6u12wkypvI5UGhWRcrck/P/lEfiUhJFT.', 'sa', '', '1', NULL, NULL, 'staff', 'active', NULL, '2025-08-15 04:46:50', '2025-08-15 04:46:50', NULL, NULL, NULL),
+(7, '1@mail.com', '$2y$10$6XQ3w1JxPXyAALRJMMzYUukJd3kI0BME6faQhY.GU2n3Apq8BrnEO', 'as', '', '2', NULL, NULL, 'staff', 'active', NULL, '2025-08-15 06:19:34', '2025-08-15 06:19:34', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -234,6 +250,7 @@ INSERT INTO `vehicle_categories` (`category_id`, `category_name`, `description`,
 ALTER TABLE `bookings`
   ADD PRIMARY KEY (`booking_id`),
   ADD UNIQUE KEY `booking_reference` (`booking_reference`),
+  ADD UNIQUE KEY `booking_reference_2` (`booking_reference`),
   ADD KEY `approved_by` (`approved_by`),
   ADD KEY `idx_booking_reference` (`booking_reference`),
   ADD KEY `idx_user_bookings` (`user_id`),
@@ -296,7 +313,7 @@ ALTER TABLE `vehicle_categories`
 -- AUTO_INCREMENT for table `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `booking_history`
@@ -314,7 +331,7 @@ ALTER TABLE `cars`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `vehicles`
