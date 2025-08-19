@@ -52,6 +52,9 @@ if (isset($_POST['add_car'])) {
         $car_name = $_POST['car_name'];
         $brand = $_POST['brand'];
         $plate_number = $_POST['plate_number'];
+        $description = $_POST['description'];
+        $passenger_seater = $_POST['passenger_seater'];
+        $transmission = $_POST['transmission'];
         $rate_6h = $_POST['rate_6h'];
         $rate_8h = $_POST['rate_8h'];
         $rate_12h = $_POST['rate_12h'];
@@ -63,8 +66,8 @@ if (isset($_POST['add_car'])) {
             $image_filename = uploadCarImage($_FILES['car_image']);
         }
 
-        $stmt = $conn->prepare("INSERT INTO cars (car_name, brand, plate_number, rate_6h, rate_8h, rate_12h, rate_24h, status, car_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssddddis", $car_name, $brand, $plate_number, $rate_6h, $rate_8h, $rate_12h, $rate_24h, $status, $image_filename);
+        $stmt = $conn->prepare("INSERT INTO cars (car_name, brand, plate_number, description, passenger_seater, transmission, rate_6h, rate_8h, rate_12h, rate_24h, status, car_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssisddddis", $car_name, $brand, $plate_number, $description, $passenger_seater, $transmission, $rate_6h, $rate_8h, $rate_12h, $rate_24h, $status, $image_filename);
         $stmt->execute();
         echo "<script>
             Swal.fire({
@@ -97,6 +100,9 @@ if (isset($_POST['edit_car'])) {
         $car_name = $_POST['car_name'];
         $brand = $_POST['brand'];
         $plate_number = $_POST['plate_number'];
+        $description = $_POST['description'];
+        $passenger_seater = $_POST['passenger_seater'];
+        $transmission = $_POST['transmission'];
         $rate_6h = $_POST['rate_6h'];
         $rate_8h = $_POST['rate_8h'];
         $rate_12h = $_POST['rate_12h'];
@@ -121,8 +127,8 @@ if (isset($_POST['edit_car'])) {
             $image_filename = uploadCarImage($_FILES['car_image']);
         }
 
-        $stmt = $conn->prepare("UPDATE cars SET car_name=?, brand=?, plate_number=?, rate_6h=?, rate_8h=?, rate_12h=?, rate_24h=?, status=?, car_image=? WHERE car_id=?");
-        $stmt->bind_param("sssddddisi", $car_name, $brand, $plate_number, $rate_6h, $rate_8h, $rate_12h, $rate_24h, $status, $image_filename, $car_id);
+        $stmt = $conn->prepare("UPDATE cars SET car_name=?, brand=?, plate_number=?, description=?, passenger_seater=?, transmission=?, rate_6h=?, rate_8h=?, rate_12h=?, rate_24h=?, status=?, car_image=? WHERE car_id=?");
+        $stmt->bind_param("ssssisddddisi", $car_name, $brand, $plate_number, $description, $passenger_seater, $transmission, $rate_6h, $rate_8h, $rate_12h, $rate_24h, $status, $image_filename, $car_id);
         $stmt->execute();
         echo "<script>
             Swal.fire({
@@ -153,8 +159,6 @@ if (isset($_POST['edit_car'])) {
 
 <head>
     <?php include('includes/header.php'); ?>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .car-image {
             width: 60px;
@@ -177,18 +181,7 @@ if (isset($_POST['edit_car'])) {
             border-radius: 5px;
             border: 1px solid #ddd;
         }
-        .no-image-placeholder {
-            width: 60px;
-            height: 60px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6c757d;
-            font-size: 12px;
-        }
+        
     </style>
 </head>
 
@@ -232,20 +225,9 @@ if (isset($_POST['edit_car'])) {
                         <?php
                         $result = $conn->query("SELECT * FROM cars ORDER BY car_id DESC");
                         while ($row = $result->fetch_assoc()) {
-                            // Use the safe image function
-                            $image_src = getCarImageSrc($row['car_image']);
-                            
+                            $image_src = $row['car_image'] ? '../uploads/cars/' . $row['car_image'] : '../assets/img/no-image.png';
                             echo "<tr>
-                                <td>";
-                            
-                            // Display image or placeholder
-                            if (!empty($row['car_image']) && file_exists('../uploads/cars/' . $row['car_image'])) {
-                                echo "<img src='{$image_src}' class='car-image' alt='Car Image'>";
-                            } else {
-                                echo "<div class='no-image-placeholder'>No Image</div>";
-                            }
-                            
-                            echo "</td>
+                                <td><img src='{$image_src}' class='car-image' alt='Car Image' onerror=\"this.src='../assets/img/no-image.png'\"></td>
                                 <td>{$row['car_id']}</td>
                                 <td>{$row['car_name']}</td>
                                 <td>{$row['brand']}</td>
@@ -259,9 +241,9 @@ if (isset($_POST['edit_car'])) {
                                     <button class='btn btn-warning btn-sm' data-toggle='modal' data-target='#editCarModal{$row['car_id']}'>
                                         <i class='fas fa-edit'></i> Edit
                                     </button>
-                                    <button class='btn btn-danger btn-sm' onclick='confirmDelete({$row['car_id']})'>
+                                    <a href='delete_car.php?id={$row['car_id']}' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure?\")'>
                                         <i class='fas fa-trash'></i> Delete
-                                    </button>
+                                    </a>
                                 </td>
                             </tr>";
 
@@ -295,16 +277,8 @@ if (isset($_POST['edit_car'])) {
                                                     </div>
                                                     <div class='col-md-4'>
                                                         <div class='form-group'>
-                                                            <label>Current Image</label><br>";
-                            
-                            // Display current image or placeholder in modal
-                            if (!empty($row['car_image']) && file_exists('../uploads/cars/' . $row['car_image'])) {
-                                echo "<img src='{$image_src}' class='current-image' alt='Current Car Image'>";
-                            } else {
-                                echo "<div class='current-image' style='display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d;'>No Image</div>";
-                            }
-                            
-                            echo "
+                                                            <label>Current Image</label><br>
+                                                            <img src='{$image_src}' class='current-image' alt='Current Car Image' onerror=\"this.src='../assets/img/no-image.png'\">
                                                         </div>
                                                         <div class='form-group'>
                                                             <label>Upload New Image (Optional)</label>
@@ -347,7 +321,7 @@ if (isset($_POST['edit_car'])) {
                                                 </div>
                                             </div>
                                             <div class='modal-footer'>
-                                                <button type='button' class='btn btn-primary' onclick='confirmUpdate({$row['car_id']})'>Update Car</button>
+                                                <button type='submit' name='edit_car' class='btn btn-primary'>Update Car</button>
                                                 <button type='button' class='btn btn-secondary' data-dismiss='modal'>Cancel</button>
                                             </div>
                                         </div>
@@ -430,7 +404,7 @@ if (isset($_POST['edit_car'])) {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="confirmAdd()">Save Car</button>
+                        <button type="submit" name="add_car" class="btn btn-primary">Save Car</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
                 </div>
@@ -440,163 +414,11 @@ if (isset($_POST['edit_car'])) {
 </div>
 
 <script>
-// SweetAlert confirmation functions
-function confirmAdd() {
-    // Validate required fields
-    const form = document.querySelector('#addCarModal form');
-    const requiredFields = form.querySelectorAll('input[required], select[required]');
-    let hasEmptyFields = false;
-    let emptyFieldNames = [];
-
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            hasEmptyFields = true;
-            const label = field.closest('.form-group').querySelector('label').textContent;
-            emptyFieldNames.push(label);
-        }
-    });
-
-    if (hasEmptyFields) {
-        Swal.fire({
-            title: 'Validation Error!',
-            text: 'Please fill in all required fields: ' + emptyFieldNames.join(', '),
-            icon: 'error',
-            confirmButtonText: 'OK'
-        });
-        return;
-    }
-
-    Swal.fire({
-        title: 'Add New Car?',
-        text: 'Are you sure you want to add this car?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, add it!',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Add hidden input for form submission
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'add_car';
-            hiddenInput.value = '1';
-            form.appendChild(hiddenInput);
-            form.submit();
-        }
-    });
-}
-
-function confirmUpdate(carId) {
-    // Validate required fields
-    const form = document.querySelector(`#editCarModal${carId} form`);
-    const requiredFields = form.querySelectorAll('input[required], select[required]');
-    let hasEmptyFields = false;
-    let emptyFieldNames = [];
-
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            hasEmptyFields = true;
-            const label = field.closest('.form-group').querySelector('label').textContent;
-            emptyFieldNames.push(label);
-        }
-    });
-
-    if (hasEmptyFields) {
-        Swal.fire({
-            title: 'Validation Error!',
-            text: 'Please fill in all required fields: ' + emptyFieldNames.join(', '),
-            icon: 'error',
-            confirmButtonText: 'OK'
-        });
-        return;
-    }
-
-    Swal.fire({
-        title: 'Update Car?',
-        text: 'Are you sure you want to update this car information?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, update it!',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Add hidden input for form submission
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'edit_car';
-            hiddenInput.value = '1';
-            form.appendChild(hiddenInput);
-            form.submit();
-        }
-    });
-}
-
-function confirmDelete(carId) {
-    Swal.fire({
-        title: 'Delete Car?',
-        text: "You won't be able to revert this action!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading
-            Swal.fire({
-                title: 'Deleting...',
-                text: 'Please wait while we delete the car.',
-                icon: 'info',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                willOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            
-            // Redirect to delete script
-            window.location.href = 'delete_car.php?id=' + carId;
-        }
-    });
-}
-
 function previewImage(input) {
     const preview = document.getElementById('imagePreview');
     const file = input.files[0];
     
     if (file) {
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(file.type)) {
-            Swal.fire({
-                title: 'Invalid File Type!',
-                text: 'Please select a valid image file (JPG, PNG, or GIF).',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-            input.value = '';
-            preview.style.display = 'none';
-            return;
-        }
-        
-        // Validate file size (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            Swal.fire({
-                title: 'File Too Large!',
-                text: 'Please select an image smaller than 5MB.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-            input.value = '';
-            preview.style.display = 'none';
-            return;
-        }
-        
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.src = e.target.result;
@@ -613,33 +435,6 @@ function previewEditImage(input, carId) {
     const file = input.files[0];
     
     if (file) {
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(file.type)) {
-            Swal.fire({
-                title: 'Invalid File Type!',
-                text: 'Please select a valid image file (JPG, PNG, or GIF).',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-            input.value = '';
-            preview.style.display = 'none';
-            return;
-        }
-        
-        // Validate file size (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            Swal.fire({
-                title: 'File Too Large!',
-                text: 'Please select an image smaller than 5MB.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-            input.value = '';
-            preview.style.display = 'none';
-            return;
-        }
-        
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.src = e.target.result;
