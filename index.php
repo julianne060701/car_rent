@@ -35,6 +35,7 @@
         </nav>
     </header>
 
+    
     <section class="hero" id="home">
         <div class="hero-overlay"></div>
         <div class="hero-content">
@@ -97,11 +98,6 @@
                         <i class="fas fa-search mr-2"></i> Find Cars
                     </button>
                 </div>
-                 <div class="flex items-end justify-center col-span-full md:col-span-1">
-                    <button type="button" class="btn btn-primary flex-1 w-full md:w-auto" onclick="saveBooking()">
-                        <i class="fas fa-save mr-2"></i> Save Progress
-                    </button>
-                </div>
             </form>
         </div>
     </section>
@@ -121,7 +117,7 @@
                             <span class="flex items-center"><i class="fas fa-gas-pump mr-2 text-blue-500"></i> Fuel Efficient</span>
                         </div>
                         <div class="price text-2xl font-bold text-gray-900 mb-4">₱1,200/day</div>
-                        <button class="btn btn-primary w-full" data-vehicle="Toyota Vios" onclick="openBookingModalWithVehicle('Toyota Vios')">Book Now</button>
+                         <button class="btn btn-primary w-full" data-vehicle="Toyota Vios" onclick="openBookingModalWithVehicle('Toyota Vios')">Book Now</button>
                     </div>
                 </div>
                 <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden" data-vehicle-id="2">
@@ -250,64 +246,172 @@
 
     <?php include 'includes/footer.php'; ?>
         
-    <div id="booking-modal" class="modal hidden">
-        <div class="modal-content w-full max-w-2xl">
-            <span class="close" onclick="closeBookingModal()">&times;</span>
-            <h2 class="text-2xl font-bold mb-4">Book Your Vehicle</h2>
-            <form class="booking-modal-form" method="POST" action="#">
-                <input type="hidden" id="selected-vehicle" name="selected_vehicle" value="">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div id="booking-modal" class="modal">
+    <div class="modal-content w-full max-w-4xl">
+        <span class="close" onclick="closeBookingModal()">&times;</span>
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Book Your Vehicle</h2>
+        
+        <form class="booking-modal-form" id="booking-modal-form" method="post" action="save_booking.php" enctype="multipart/form-data">
+            <input type="hidden" id="selected-vehicle" name="selected_vehicle" value="">
+            
+            <!-- Personal Information Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-user mr-2"></i>Personal Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="customer-name" class="block text-gray-700">Full Name *</label>
-                        <input type="text" id="customer-name" name="customer_name" class="w-full mt-1 p-2 border rounded-md" required>
+                        <label for="customer-name" class="block text-gray-700 font-medium mb-1">Full Name *</label>
+                        <input type="text" id="customer-name" name="customer_name" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                     </div>
                     <div>
-                        <label for="customer-phone" class="block text-gray-700">Phone Number *</label>
-                        <input type="tel" id="customer-phone" name="customer_phone" class="w-full mt-1 p-2 border rounded-md" required>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="customer-email" class="block text-gray-700">Email Address *</label>
-                        <input type="email" id="customer-email" name="customer_email" class="w-full mt-1 p-2 border rounded-md" required>
+                        <label for="customer-phone" class="block text-gray-700 font-medium mb-1">Phone Number *</label>
+                        <input type="tel" id="customer-phone" name="customer_phone" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                     </div>
                     <div>
-                        <label for="license-number" class="block text-gray-700">Driver's License No. *</label>
-                        <input type="text" id="license-number" name="license_number" class="w-full mt-1 p-2 border rounded-md" required>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="modal-pickup-date" class="block text-gray-700">Pickup Date *</label>
-                        <input type="date" id="modal-pickup-date" name="modal_pickup_date" class="w-full mt-1 p-2 border rounded-md" required>
+                        <label for="customer-email" class="block text-gray-700 font-medium mb-1">Email Address *</label>
+                        <input type="email" id="customer-email" name="customer_email" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                     </div>
                     <div>
-                        <label for="modal-return-date" class="block text-gray-700">Return Date *</label>
-                        <input type="date" id="modal-return-date" name="modal_return_date" class="w-full mt-1 p-2 border rounded-md" required>
+                        <label for="license-number" class="block text-gray-700 font-medium mb-1">Driver's License No. *</label>
+                        <input type="text" id="license-number" name="license_number" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                     </div>
                 </div>
-                <div class="mb-4">
-                    <label for="pickup-location-modal" class="block text-gray-700">Pickup Location *</label>
-                    <select id="pickup-location-modal" name="pickup_location_modal" class="w-full mt-1 p-2 border rounded-md" required>
-                        <option value="">Select Location</option>
-                        <option value="gensan-airport">GenSan Airport</option>
-                        <option value="downtown-gensan">Downtown GenSan</option>
-                        <option value="kcc-mall">KCC Mall</option>
-                        <option value="robinsons-place">Robinson's Place GenSan</option>
-                        <option value="sm-city-gensan">SM City General Santos</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="special-requests" class="block text-gray-700">Special Requests</label>
-                    <textarea id="special-requests" name="special_requests" rows="3" placeholder="Any special requirements or requests..." class="w-full mt-1 p-2 border rounded-md"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary w-full">Submit Booking Request</button>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <div id="message-modal" class="modal hidden">
+            <!-- Rental Details Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-calendar-alt mr-2"></i>Rental Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="start-date" class="block text-gray-700 font-medium mb-1">Pickup Date *</label>
+                        <input type="date" id="start-date" name="start_date" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label for="end-date" class="block text-gray-700 font-medium mb-1">Return Date *</label>
+                        <input type="date" id="end-date" name="end_date" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label for="start-time" class="block text-gray-700 font-medium mb-1">Pickup Time *</label>
+                        <input type="time" id="start-time" name="start_time" value="09:00" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label for="end-time" class="block text-gray-700 font-medium mb-1">Return Time *</label>
+                        <input type="time" id="end-time" name="end_time" value="09:00" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="pickup-location-modal" class="block text-gray-700 font-medium mb-1">Pickup Location *</label>
+                        <select id="pickup-location-modal" name="pickup_location" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            <option value="">Select Location</option>
+                            <option value="gensan-airport">GenSan Airport</option>
+                            <option value="downtown-gensan">Downtown GenSan</option>
+                            <option value="kcc-mall">KCC Mall</option>
+                            <option value="robinsons-place">Robinson's Place GenSan</option>
+                            <option value="sm-city-gensan">SM City General Santos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="return-location-modal" class="block text-gray-700 font-medium mb-1">Return Location</label>
+                        <select id="return-location-modal" name="return_location" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Same as pickup</option>
+                            <option value="gensan-airport">GenSan Airport</option>
+                            <option value="downtown-gensan">Downtown GenSan</option>
+                            <option value="kcc-mall">KCC Mall</option>
+                            <option value="robinsons-place">Robinson's Place GenSan</option>
+                            <option value="sm-city-gensan">SM City General Santos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-info-circle mr-2"></i>Additional Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="passengers" class="block text-gray-700 font-medium mb-1">Number of Passengers</label>
+                        <input type="number" id="passengers" name="passengers" min="1" max="8" value="1" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="rental-duration-modal" class="block text-gray-700 font-medium mb-1">Rental Duration (Optional)</label>
+                        <select id="rental-duration-modal" name="rental_duration" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Auto Calculate</option>
+                            <option value="8">8 Hours</option>
+                            <option value="12">12 Hours</option>
+                            <option value="24">24 Hours</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="purpose" class="block text-gray-700 font-medium mb-1">Purpose of Rental</label>
+                    <textarea id="purpose" name="purpose" rows="3" placeholder="Business trip, vacation, etc." class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Document Upload Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-upload mr-2"></i>Upload License/ID Copy</h3>
+                <div class="image-upload-container" id="imageUploadContainer">
+                    <input type="file" id="upload-image" name="upload-image" accept="image/*" class="image-upload-input">
+                    <div class="image-upload-content">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 text-lg font-medium mb-2">Upload Driver's License or Valid ID</p>
+                        <p class="text-gray-500 text-sm mb-4">Drag and drop your image here, or click to browse</p>
+                        <div class="text-xs text-gray-400">
+                            <span class="bg-gray-100 px-2 py-1 rounded">JPG, PNG, PDF up to 10MB</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="image-preview" id="imagePreview" style="display: none;">
+                    <img id="previewImage" src="" alt="Preview">
+                    <div class="image-preview-actions">
+                        <button type="button" class="btn-change" onclick="changeImage()">
+                            <i class="fas fa-edit mr-1"></i> Change
+                        </button>
+                        <button type="button" class="btn-remove" onclick="removeImage()">
+                            <i class="fas fa-trash mr-1"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cost Summary -->
+            <div id="cost-summary" class="form-section hidden">
+                <h3><i class="fas fa-calculator mr-2"></i>Rental Summary</h3>
+                <div class="bg-white p-4 rounded-lg border">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="font-medium">Selected Vehicle:</div>
+                        <div id="summary-vehicle" class="text-blue-600 font-semibold">-</div>
+                        
+                        <div class="font-medium">Rental Duration:</div>
+                        <div id="summary-duration" class="text-blue-600 font-semibold">-</div>
+                        
+                        <div class="font-medium">Rate:</div>
+                        <div id="summary-rate" class="text-blue-600 font-semibold">-</div>
+                        
+                        <div class="border-t pt-2 font-bold text-lg">Total Cost:</div>
+                        <div id="summary-total" class="border-t pt-2 font-bold text-xl text-green-600">₱0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 mt-6">
+                <button type="submit" class="btn btn-primary flex-1 py-3 text-lg">
+                    <i class="fas fa-paper-plane mr-2"></i>Submit Booking Request
+                </button>
+                <button type="button" class="btn btn-secondary flex-1 py-3 text-lg" onclick="saveBookingModal()">
+                    <i class="fas fa-save mr-2"></i>Save for Later
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <!-- Message Modal -->
+    <div id="message-modal" class="modal">
         <div class="modal-content w-full max-w-sm">
             <span class="close" onclick="closeMessageModal()">&times;</span>
             <div id="message-content" class="p-4 text-center"></div>
