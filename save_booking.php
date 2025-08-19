@@ -31,13 +31,13 @@ try {
         $customer_phone = sanitize_input($_POST['customer_phone'] ?? '');
         $customer_email = sanitize_input($_POST['customer_email'] ?? '');
         $license_number = sanitize_input($_POST['license_number'] ?? '');
-        $pickup_date = sanitize_input($_POST['start_date'] ?? '');  // Fixed field name
-        $return_date = sanitize_input($_POST['end_date'] ?? '');    // Fixed field name
-        $pickup_time = sanitize_input($_POST['start_time'] ?? '');  // Fixed field name
-        $return_time = sanitize_input($_POST['end_time'] ?? '');    // Fixed field name
+        $pickup_date = sanitize_input($_POST['start_date'] ?? '');
+        $return_date = sanitize_input($_POST['end_date'] ?? '');
+        $pickup_time = sanitize_input($_POST['start_time'] ?? '');
+        $return_time = sanitize_input($_POST['end_time'] ?? '');
         $pickup_location = sanitize_input($_POST['pickup_location'] ?? '');
         $return_location = sanitize_input($_POST['return_location'] ?? '');
-        $purpose_requests = sanitize_input($_POST['purpose'] ?? ''); // Fixed field name
+        $purpose_requests = sanitize_input($_POST['purpose'] ?? '');
         $passengers = sanitize_input($_POST['passengers'] ?? '1');
         $selected_vehicle = sanitize_input($_POST['selected_vehicle'] ?? '');
         $rental_duration = !empty($_POST['rental_duration']) ? (int)sanitize_input($_POST['rental_duration']) : null;
@@ -88,7 +88,7 @@ try {
         $booking_reference = "BK" . $year . str_pad($new_number, 4, '0', STR_PAD_LEFT);
 
         // Get vehicle data - check both car_name and other possible column names
-        $sql_cars = "SELECT car_id, rate_per_day, hourly_rate FROM cars WHERE car_name = ? OR model = ? OR vehicle_name = ? LIMIT 1";
+        $sql_cars = "SELECT car_id, rate_per_day, hourly_rate FROM cars WHERE car_name = ? OR car_id = ? OR car_name = ? LIMIT 1";
         $stmt_cars = $conn->prepare($sql_cars);
         if (!$stmt_cars) {
             throw new Exception("Vehicle query prepare failed: " . $conn->error);
@@ -136,11 +136,16 @@ try {
 
         // Determine final rental hours and type
         $total_hours = $calculated_hours;
-        $rental_type = 'calculated';
+        $rental_type = 'hourly';
         
         if ($rental_duration && $rental_duration >= 8) {
             $total_hours = $rental_duration;
-            $rental_type = 'fixed';
+            $rental_type = 'hourly';
+        }
+
+        // Determine rental type based on duration
+        if ($total_hours >= 24) {
+            $rental_type = 'daily';
         }
 
         // Calculate total cost
@@ -188,25 +193,29 @@ try {
         // Use return_location or default to pickup_location if empty
         $final_return_location = !empty($return_location) ? $return_location : $pickup_location;
 
-        // Insert booking
+        // INSERT statement matching your actual database schema
         $sql_insert = "INSERT INTO bookings (
             booking_reference, user_id, vehicle_id, customer_name, customer_phone, 
-            customer_email, license_number, pickup_date, return_date, pickup_time, 
-            return_time, pickup_location, return_location, purpose, passengers,
-            rental_type, rental_duration_hours, total_hours, total_cost, 
-            uploaded_document, booking_date, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pending')";
+            customer_email, license_number, start_date, end_date, start_time, 
+            end_time, pickup_location, return_location, purpose, passengers,
+            total_cost, rental_type, rental_duration_hours, total_hours,
+            pickup_time, return_time, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
 
         $stmt_insert = $conn->prepare($sql_insert);
 
         if ($stmt_insert) {
+            // Convert rental_duration_hours to match expected type
+            $rental_duration_hours = $rental_duration ? (int)$rental_duration : null;
+            
             $stmt_insert->bind_param(
-                "siisssssssssssissdds",
+                "siisssssssssssididsss",
                 $booking_reference, $user_id, $car_id, $customer_name,
                 $customer_phone, $customer_email, $license_number, $pickup_date, 
                 $return_date, $pickup_time, $return_time, $pickup_location, 
-                $final_return_location, $purpose_requests, $passengers, $rental_type, 
-                $rental_duration, $total_hours, $total_cost, $uploaded_file_path
+                $final_return_location, $purpose_requests, $passengers, $total_cost,
+                $rental_type, $rental_duration_hours, $total_hours,
+                $pickup_time, $return_time
             );
 
             if ($stmt_insert->execute()) {

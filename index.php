@@ -83,16 +83,6 @@
                     <input type="time" id="return-time" name="return_time" value="09:00" required>
                 </div>
 
-                <div class="form-group">
-                    <label for="rental-duration" class="block text-gray-700">Rental Duration</label>
-                    <select id="rental-duration" name="rental_duration">
-                        <option value="">Select Duration</option>
-                        <option value="8">8 Hours</option>
-                        <option value="12">12 Hours</option>
-                        <option value="24">24 Hours</option>
-                    </select>
-                </div>
-
                 <div class="flex items-end justify-center col-span-full md:col-span-1">
                     <button type="submit" class="btn btn-search flex-1 w-full md:w-auto">
                         <i class="fas fa-search mr-2"></i> Find Cars
@@ -102,67 +92,22 @@
         </div>
     </section>
 
+    <!-- Featured Vehicles Section - This will be populated by JavaScript -->
     <section class="featured-vehicles py-16" id="vehicles">
         <div class="container mx-auto px-4">
             <h2 class="text-4xl font-bold text-center mb-12">Our Popular Vehicles</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden" data-vehicle-id="1">
-                    <img src="https://placehold.co/400x250/3b82f6/ffffff?text=Toyota+Vios" alt="Toyota Vios" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Toyota Vios</h3>
-                        <p class="text-gray-600 mb-4">Perfect for city driving and business trips</p>
-                        <div class="features grid grid-cols-3 gap-2 text-sm text-gray-500 mb-4">
-                            <span class="flex items-center"><i class="fas fa-users mr-2 text-blue-500"></i> 4 Passengers</span>
-                            <span class="flex items-center"><i class="fas fa-cog mr-2 text-blue-500"></i> Automatic</span>
-                            <span class="flex items-center"><i class="fas fa-gas-pump mr-2 text-blue-500"></i> Fuel Efficient</span>
-                        </div>
-                        <div class="price text-2xl font-bold text-gray-900 mb-4">₱1,200/day</div>
-                         <button class="btn btn-primary w-full" data-vehicle="Toyota Vios" onclick="openBookingModalWithVehicle('Toyota Vios')">Book Now</button>
-                    </div>
-                </div>
-                <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden" data-vehicle-id="2">
-                    <img src="https://placehold.co/400x250/f59e0b/ffffff?text=Toyota+Innova" alt="Toyota Innova" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Toyota Innova</h3>
-                        <p class="text-gray-600 mb-4">Spacious family vehicle for group travels</p>
-                        <div class="features grid grid-cols-3 gap-2 text-sm text-gray-500 mb-4">
-                            <span class="flex items-center"><i class="fas fa-users mr-2 text-yellow-500"></i> 7 Passengers</span>
-                            <span class="flex items-center"><i class="fas fa-cog mr-2 text-yellow-500"></i> Manual</span>
-                            <span class="flex items-center"><i class="fas fa-suitcase mr-2 text-yellow-500"></i> Large Cargo</span>
-                        </div>
-                        <div class="price text-2xl font-bold text-gray-900 mb-4">₱2,000/day</div>
-                        <button class="btn btn-primary w-full" data-vehicle="Toyota Innova" onclick="openBookingModalWithVehicle('Toyota Innova')">Book Now</button>
-                    </div>
-                </div>
-                <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden" data-vehicle-id="3">
-                    <img src="https://placehold.co/400x250/3b82f6/ffffff?text=Honda+City" alt="Honda City" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3>Honda City</h3>
-                        <p>Reliable and fuel efficient sedan</p>
-                        <div class="features grid grid-cols-3 gap-2 text-sm text-gray-500 mb-4">
-                            <span class="flex items-center"><i class="fas fa-users mr-2 text-blue-500"></i> 4 Passengers</span>
-                            <span class="flex items-center"><i class="fas fa-cog mr-2 text-blue-500"></i> CVT</span>
-                            <span class="flex items-center"><i class="fas fa-leaf mr-2 text-blue-500"></i> Eco-Friendly</span>
-                        </div>
-                        <div class="price text-2xl font-bold text-gray-900 mb-4">₱1,300/day</div>
-                        <button class="btn btn-primary w-full" data-vehicle="Honda City" onclick="openBookingModalWithVehicle('Honda City')">Book Now</button>
-                    </div>
-                </div>
-                <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden" data-vehicle-id="4">
-                    <img src="https://placehold.co/400x250/f59e0b/ffffff?text=Mitsubishi+Xpander" alt="Mitsubishi Xpander" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <h3>Mitsubishi Xpander</h3>
-                        <p>Modern MPV with stylish design</p>
-                        <div class="features grid grid-cols-3 gap-2 text-sm text-gray-500 mb-4">
-                            <span class="flex items-center"><i class="fas fa-users mr-2 text-yellow-500"></i> 7 Passengers</span>
-                            <span class="flex items-center"><i class="fas fa-cog mr-2 text-yellow-500"></i> Automatic</span>
-                            <span class="flex items-center"><i class="fas fa-shield-alt mr-2 text-yellow-500"></i> Safety Features</span>
-                        </div>
-                        <div class="price text-2xl font-bold text-gray-900 mb-4">₱1,800/day</div>
-                        <button class="btn btn-primary w-full" data-vehicle="Mitsubishi Xpander" onclick="openBookingModalWithVehicle('Mitsubishi Xpander')">Book Now</button>
-                    </div>
-                </div>
+            
+            <!-- Loading State -->
+            <div id="vehicles-loading" class="text-center py-12">
+                <div class="loading-spinner"></div>
+                <p class="text-gray-600 mt-4">Loading available vehicles...</p>
             </div>
+            
+            <!-- Vehicles Grid - Will be populated by JavaScript -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" id="vehicles-grid">
+                <!-- Vehicle cards will be inserted here by JavaScript -->
+            </div>
+            
             <div class="text-center mt-8">
                 <a href="#vehicles" class="btn btn-secondary">View All Vehicles</a>
             </div>
@@ -210,39 +155,32 @@
     <section class="testimonials py-16" id="testimonials">
         <div class="container mx-auto px-4">
             <h2 class="text-4xl font-bold text-center mb-12">What Our Customers Say</h2>
-            <div class="testimonial-slider relative w-full overflow-hidden">
-                <div id="testimonial-container" class="flex transition-transform duration-500">
-                    <div class="testimonial flex-none w-full md:w-1/2 lg:w-1/3 p-4">
-                        <div class="bg-white p-8 rounded-xl shadow-md text-center">
-                            <p class="text-gray-700 mb-4 italic">"Excellent service! The Toyota Vios was clean and well-maintained. Perfect for our GenSan business trip. Highly recommended!"</p>
-                            <div class="customer">
-                                <strong class="block text-lg font-semibold text-gray-900">Maria Santos</strong>
-                                <span class="text-gray-500">Business Traveler</span>
-                            </div>
-                        </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-md text-center">
+                    <p class="text-gray-700 mb-4 italic">"Excellent service! The Toyota Vios was clean and well-maintained. Perfect for our GenSan business trip. Highly recommended!"</p>
+                    <div class="customer">
+                        <strong class="block text-lg font-semibold text-gray-900">Maria Santos</strong>
+                        <span class="text-gray-500">Business Traveler</span>
                     </div>
-                    <div class="testimonial flex-none w-full md:w-1/2 lg:w-1/3 p-4">
-                        <div class="bg-white p-8 rounded-xl shadow-md text-center">
-                            <p class="text-gray-700 mb-4 italic">"Great rates and very friendly staff. The Innova made our family vacation around South Cotabato so much easier and comfortable!"</p>
-                            <div class="customer">
-                                <strong class="block text-lg font-semibold text-gray-900">Juan Dela Cruz</strong>
-                                <span class="text-gray-500">Tourist</span>
-                            </div>
-                        </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md text-center">
+                    <p class="text-gray-700 mb-4 italic">"Great rates and very friendly staff. The Innova made our family vacation around South Cotabato so much easier and comfortable!"</p>
+                    <div class="customer">
+                        <strong class="block text-lg font-semibold text-gray-900">Juan Dela Cruz</strong>
+                        <span class="text-gray-500">Tourist</span>
                     </div>
-                    <div class="testimonial flex-none w-full md:w-1/2 lg:w-1/3 p-4">
-                        <div class="bg-white p-8 rounded-xl shadow-md text-center">
-                            <p class="text-gray-700 mb-4 italic">"Professional service from start to finish. The booking process was smooth and the car was delivered on time. Will definitely rent again!"</p>
-                            <div class="customer">
-                                <strong class="block text-lg font-semibold text-gray-900">Anna Reyes</strong>
-                                <span class="text-gray-500">Local Customer</span>
-                            </div>
-                        </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md text-center">
+                    <p class="text-gray-700 mb-4 italic">"Professional service from start to finish. The booking process was smooth and the car was delivered on time. Will definitely rent again!"</p>
+                    <div class="customer">
+                        <strong class="block text-lg font-semibold text-gray-900">Anna Reyes</strong>
+                        <span class="text-gray-500">Local Customer</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
 
     <?php include 'includes/footer.php'; ?>
         
@@ -393,7 +331,7 @@
                         <div id="summary-rate" class="text-blue-600 font-semibold">-</div>
                         
                         <div class="border-t pt-2 font-bold text-lg">Total Cost:</div>
-                        <div id="summary-total" class="border-t pt-2 font-bold text-xl text-green-600">₱0.00</div>
+                        <div id="summary-total" class="border-t pt-2 font-bold text-xl text-green-600">₱/div>
                     </div>
                 </div>
             </div>

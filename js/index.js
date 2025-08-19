@@ -3,13 +3,241 @@ let bookingData = {
     modalBooking: {}
 };
 
-// Vehicle pricing data
-const vehiclePricing = {
-    'Toyota Vios': { dailyRate: 1200, hourlyRate: 50 },
-    'Toyota Innova': { dailyRate: 2000, hourlyRate: 83 },
-    'Honda City': { dailyRate: 1300, hourlyRate: 54 },
-    'Mitsubishi Xpander': { dailyRate: 1800, hourlyRate: 75 }
+// Store vehicles data globally
+let vehiclesData = [];
+
+// Vehicle pricing will be loaded dynamically from database
+let vehiclePricing = {};
+
+// Vehicle type mappings for features and descriptions
+const vehicleTypeConfig = {
+    'Vios': {
+        passengers: 4,
+        transmission: 'Automatic',
+        feature3: 'Fuel Efficient',
+        description: 'Perfect for city driving and business trips',
+        color: 'blue',
+        iconFeature3: 'gas-pump'
+    },
+    'Innova': {
+        passengers: 7,
+        transmission: 'Manual',
+        feature3: 'Large Cargo',
+        description: 'Spacious family vehicle for group travels',
+        color: 'yellow',
+        iconFeature3: 'suitcase'
+    },
+    'City': {
+        passengers: 4,
+        transmission: 'CVT',
+        feature3: 'Eco-Friendly',
+        description: 'Reliable and fuel efficient sedan',
+        color: 'blue',
+        iconFeature3: 'leaf'
+    },
+    'Xpander': {
+        passengers: 7,
+        transmission: 'Automatic',
+        feature3: 'Safety Features',
+        description: 'Modern MPV with stylish design',
+        color: 'yellow',
+        iconFeature3: 'shield-alt'
+    },
+    // Default configuration for unknown vehicle types
+    'default': {
+        passengers: 4,
+        transmission: 'Automatic',
+        feature3: 'Modern Features',
+        description: 'Quality vehicle for your travel needs',
+        color: 'blue',
+        iconFeature3: 'car'
+    }
 };
+
+// Function to get vehicle configuration
+function getVehicleConfig(carName) {
+    // Try to match with existing configurations
+    for (const [key, config] of Object.entries(vehicleTypeConfig)) {
+        if (key !== 'default' && carName.toLowerCase().includes(key.toLowerCase())) {
+            return config;
+        }
+    }
+    // Return default if no match found
+    return vehicleTypeConfig.default;
+}
+
+// Function to load vehicles from database
+async function loadVehicles() {
+    try {
+        console.log('Loading vehicles from database...');
+        
+        const response = await fetch('get_vehicles.php');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            vehiclesData = data.data;
+            
+            // Update vehiclePricing object with database data
+            vehiclePricing = {};
+            vehiclesData.forEach(vehicle => {
+                vehiclePricing[vehicle.car_name] = {
+                    dailyRate: vehicle.rate_per_day,
+                    hourlyRate: vehicle.hourly_rate
+                };
+            });
+            
+            console.log('Vehicles loaded:', vehiclesData);
+            console.log('Pricing updated:', vehiclePricing);
+            
+            // Render vehicles in the DOM
+            renderVehicles();
+            
+            return vehiclesData;
+        } else {
+            throw new Error(data.message || 'Failed to load vehicles');
+        }
+    } catch (error) {
+        console.error('Error loading vehicles:', error);
+        showMessage('Unable to load vehicles. Please refresh the page and try again.', 'error');
+        
+        // Show fallback message in vehicles section
+        const vehiclesContainer = document.querySelector('#vehicles .grid');
+        const loadingElement = document.getElementById('vehicles-loading');
+        
+        // Hide loading spinner
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+        
+        if (vehiclesContainer) {
+            vehiclesContainer.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Unable to Load Vehicles</h3>
+                    <p class="text-gray-500 mb-4">Please refresh the page or contact us for assistance.</p>
+                    <button onclick="loadVehicles()" class="btn btn-primary">
+                        <i class="fas fa-refresh mr-2"></i>Try Again
+                    </button>
+                </div>
+            `;
+        }
+        
+        return [];
+    }
+}
+
+// Function to render vehicles in the DOM
+function renderVehicles() {
+    const vehiclesContainer = document.querySelector('#vehicles .grid');
+    const loadingElement = document.getElementById('vehicles-loading');
+    
+    // Hide loading spinner
+    if (loadingElement) {
+        loadingElement.style.display = 'none';
+    }
+    
+    if (!vehiclesContainer || !vehiclesData || vehiclesData.length === 0) {
+        console.error('No vehicles container found or no vehicles data');
+        if (vehiclesContainer) {
+            vehiclesContainer.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-car text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No Vehicles Available</h3>
+                    <p class="text-gray-500 mb-4">Please check back later or contact us for assistance.</p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    console.log('Rendering vehicles...');
+    
+    let vehiclesHtml = '';
+    
+    vehiclesData.forEach((vehicle, index) => {
+        const config = getVehicleConfig(vehicle.car_name);
+        const colorClass = config.color === 'yellow' ? 'yellow' : 'blue';
+        const bgColor = colorClass === 'yellow' ? '#f59e0b' : '#3b82f6';
+        
+        // Format pricing
+        const dailyRate = parseFloat(vehicle.rate_per_day);
+        const hourlyRate = parseFloat(vehicle.hourly_rate);
+        
+        // Generate placeholder image URL with vehicle name
+        const imageUrl = `https://placehold.co/400x250/${bgColor.replace('#', '')}/ffffff?text=${encodeURIComponent(vehicle.car_name)}`;
+        
+        // Availability styling
+        const availabilityClass = vehicle.is_available ? 'text-green-600' : 'text-red-500';
+        const availabilityIcon = vehicle.is_available ? 'check-circle' : 'times-circle';
+        
+        vehiclesHtml += `
+            <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden ${!vehicle.is_available ? 'opacity-75' : ''}" data-vehicle-id="${vehicle.car_id}">
+                <div class="relative">
+                    <img src="${imageUrl}" alt="${vehicle.car_name}" class="w-full h-48 object-cover">
+                    <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-1 text-xs font-medium ${availabilityClass}">
+                        <i class="fas fa-${availabilityIcon} mr-1"></i>
+                        ${vehicle.availability_text}
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-semibold text-gray-900">${vehicle.car_name}</h3>
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${vehicle.brand}</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">${config.description}</p>
+                    
+                    <div class="features grid grid-cols-3 gap-2 text-sm text-gray-500 mb-4">
+                        <span class="flex items-center">
+                            <i class="fas fa-users mr-2 text-${colorClass}-500"></i> 
+                            ${config.passengers} Passengers
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-cog mr-2 text-${colorClass}-500"></i> 
+                            ${config.transmission}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-${config.iconFeature3} mr-2 text-${colorClass}-500"></i> 
+                            ${config.feature3}
+                        </span>
+                    </div>
+                    
+                    <div class="pricing mb-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-2xl font-bold text-gray-900">₱${dailyRate.toLocaleString()}/day</div>
+                                <div class="text-sm text-gray-500">₱${hourlyRate}/hour</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-400">Plate:</div>
+                                <div class="text-sm font-mono font-semibold text-gray-600">${vehicle.plate_number}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        class="btn w-full ${vehicle.is_available ? 'btn-primary' : 'bg-gray-400 text-white cursor-not-allowed'}" 
+                        data-vehicle="${vehicle.car_name}"
+                        onclick="${vehicle.is_available ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"
+                        ${!vehicle.is_available ? 'disabled' : ''}>
+                        ${vehicle.is_available ? 'Book Now' : 'Currently Unavailable'}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    vehiclesContainer.innerHTML = vehiclesHtml;
+    console.log('Vehicles rendered successfully');
+}
+
+// Function to show unavailable message
+function showUnavailableMessage() {
+    showMessage('This vehicle is currently booked. Please choose another vehicle or try different dates.', 'error');
+}
 
 // Image upload functionality
 function initializeImageUpload() {
@@ -98,6 +326,18 @@ function openBookingModal() {
 }
 
 function openBookingModalWithVehicle(vehicleName) {
+    // Check if vehicle exists and is available
+    const vehicle = vehiclesData.find(v => v.car_name === vehicleName);
+    if (!vehicle) {
+        showMessage('Vehicle not found. Please refresh the page and try again.', 'error');
+        return;
+    }
+    
+    if (!vehicle.is_available) {
+        showUnavailableMessage();
+        return;
+    }
+    
     document.getElementById('selected-vehicle').value = vehicleName;
     openBookingModal();
     setTimeout(calculateRentalCost, 100);
@@ -326,6 +566,11 @@ function submitBookingToServer(formData) {
             removeImage();
             closeBookingModal();
             
+            // Refresh vehicle availability after successful booking
+            setTimeout(() => {
+                loadVehicles();
+            }, 1000);
+            
         } else {
             showMessage(data.message || 'An error occurred while processing your booking.', "error");
         }
@@ -343,6 +588,15 @@ function submitBookingToServer(formData) {
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
+    
+    // Hide loading spinner initially and show it when loading vehicles
+    const loadingElement = document.getElementById('vehicles-loading');
+    if (loadingElement) {
+        loadingElement.style.display = 'block';
+    }
+    
+    // Load vehicles from database
+    loadVehicles();
     
     initializeImageUpload();
 
@@ -433,3 +687,9 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
+
+// Refresh vehicles every 5 minutes to keep availability updated
+setInterval(() => {
+    console.log('Auto-refreshing vehicle availability...');
+    loadVehicles();
+}, 5 * 60 * 1000); // 5 minutes
