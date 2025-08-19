@@ -87,6 +87,7 @@
                     <button type="submit" class="btn btn-search flex-1 w-full md:w-auto">
                         <i class="fas fa-search mr-2"></i> Find Cars
                     </button>
+                    <form id="quick-booking-form" class="booking-form" action="search-available_car.php" method="GET">
                 </div>
             </form>
         </div>

@@ -70,32 +70,32 @@ function getVehicleConfig(carName) {
 async function loadVehicles() {
     try {
         console.log('Loading vehicles from database...');
-        
+
         const response = await fetch('get_vehicles.php');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.status === 'success') {
             vehiclesData = data.data;
-            
+
             // Update vehiclePricing object with database data
             vehiclePricing = {};
             vehiclesData.forEach(vehicle => {
                 vehiclePricing[vehicle.car_name] = {
                     dailyRate: vehicle.rate_per_day,
-                    hourlyRate: vehicle.hourly_rate
+                   
                 };
             });
-            
+
             console.log('Vehicles loaded:', vehiclesData);
             console.log('Pricing updated:', vehiclePricing);
-            
+
             // Render vehicles in the DOM
             renderVehicles();
-            
+
             return vehiclesData;
         } else {
             throw new Error(data.message || 'Failed to load vehicles');
@@ -103,16 +103,16 @@ async function loadVehicles() {
     } catch (error) {
         console.error('Error loading vehicles:', error);
         showMessage('Unable to load vehicles. Please refresh the page and try again.', 'error');
-        
+
         // Show fallback message in vehicles section
         const vehiclesContainer = document.querySelector('#vehicles .grid');
         const loadingElement = document.getElementById('vehicles-loading');
-        
+
         // Hide loading spinner
         if (loadingElement) {
             loadingElement.style.display = 'none';
         }
-        
+
         if (vehiclesContainer) {
             vehiclesContainer.innerHTML = `
                 <div class="col-span-full text-center py-12">
@@ -125,21 +125,22 @@ async function loadVehicles() {
                 </div>
             `;
         }
-        
+
         return [];
     }
 }
 
 // Function to render vehicles in the DOM
+// Function to render vehicles in the DOM
 function renderVehicles() {
     const vehiclesContainer = document.querySelector('#vehicles .grid');
     const loadingElement = document.getElementById('vehicles-loading');
-    
+
     // Hide loading spinner
     if (loadingElement) {
         loadingElement.style.display = 'none';
     }
-    
+
     if (!vehiclesContainer || !vehiclesData || vehiclesData.length === 0) {
         console.error('No vehicles container found or no vehicles data');
         if (vehiclesContainer) {
@@ -156,33 +157,37 @@ function renderVehicles() {
         }
         return;
     }
-    
+
     console.log('Rendering vehicles...');
-    
+
     let vehiclesHtml = '';
-    
-    vehiclesData.forEach((vehicle, index) => {
+
+    vehiclesData.forEach((vehicle) => {
         const config = getVehicleConfig(vehicle.car_name);
         const colorClass = config.color === 'yellow' ? 'yellow' : 'blue';
         const bgColor = colorClass === 'yellow' ? '#f59e0b' : '#3b82f6';
-        
+
         // Format pricing
         const dailyRate = parseFloat(vehicle.rate_per_day);
-        const hourlyRate = parseFloat(vehicle.hourly_rate);
+
+
         
-        // Generate placeholder image URL with vehicle name
-        const imageUrl = `https://placehold.co/400x250/${bgColor.replace('#', '')}/ffffff?text=${encodeURIComponent(vehicle.car_name)}`;
-        
+        // ✅ Use DB image if available, otherwise fallback to placeholder
+        const imageUrl = vehicle.car_image && vehicle.car_image.trim() !== ''
+        ? `uploads/cars/${vehicle.car_image}`
+        : 'assets/images/default-car.jpg';
+
         // Determine availability based on status field (1 = available, 0 = unavailable)
         const isAvailable = vehicle.status == 1;
         const availabilityClass = isAvailable ? 'text-green-600' : 'text-red-500';
         const availabilityIcon = isAvailable ? 'check-circle' : 'times-circle';
         const availabilityText = isAvailable ? 'Available' : 'Currently Booked';
-        
+
         vehiclesHtml += `
             <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden ${!isAvailable ? 'opacity-75' : ''}" data-vehicle-id="${vehicle.car_id}">
                 <div class="relative">
-                    <img src="${imageUrl}" alt="${vehicle.car_name}" class="w-full h-48 object-cover">
+                  <img src="${imageUrl}" alt="${vehicle.car_name}" class="w-full h-48 object-cover">
+
                     <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-1 text-xs font-medium ${availabilityClass}">
                         <i class="fas fa-${availabilityIcon} mr-1"></i>
                         ${availabilityText}
@@ -214,7 +219,7 @@ function renderVehicles() {
                         <div class="flex justify-between items-center">
                             <div>
                                 <div class="text-2xl font-bold text-gray-900">₱${dailyRate.toLocaleString()}/day</div>
-                                <div class="text-sm text-gray-500">₱${hourlyRate}/hour</div>
+                               
                             </div>
                             <div class="text-right">
                                 <div class="text-xs text-gray-400">Plate:</div>
@@ -226,7 +231,7 @@ function renderVehicles() {
                     <button 
                         class="btn w-full ${isAvailable ? 'btn-primary' : 'bg-gray-400 text-white cursor-not-allowed'}" 
                         data-vehicle="${vehicle.car_name}"
-                        onclick="${isAvailable ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"
+                        onclick="${isAvailable ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"                        onclick="${isAvailable ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"
                         ${!isAvailable ? 'disabled' : ''}>
                         ${isAvailable ? 'Book Now' : 'Currently Unavailable'}
                     </button>
@@ -234,11 +239,10 @@ function renderVehicles() {
             </div>
         `;
     });
-    
+
     vehiclesContainer.innerHTML = vehiclesHtml;
     console.log('Vehicles rendered successfully');
 }
-
 // Function to show unavailable message
 function showUnavailableMessage() {
     showMessage('This vehicle is currently booked. Please choose another vehicle or try different dates.', 'error');

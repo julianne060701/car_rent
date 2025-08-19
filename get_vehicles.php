@@ -10,14 +10,14 @@ try {
         throw new Exception("Database configuration file not found.");
     }
     require_once 'config/db.php';
-    
+
     if ($conn->connect_error) {
         throw new Exception("Database connection failed: " . $conn->connect_error);
     }
 
     // Get current date and time
     $current_datetime = date('Y-m-d H:i:s');
-    
+
     // First, update car status based on active bookings
     $update_status_sql = "
         UPDATE cars c 
@@ -32,16 +32,16 @@ try {
             ELSE 1
         END
     ";
-    
+
     $stmt_update = $conn->prepare($update_status_sql);
     if (!$stmt_update) {
         throw new Exception("Failed to prepare status update query: " . $conn->error);
     }
-    
+
     $stmt_update->bind_param("ss", $current_datetime, $current_datetime);
     $stmt_update->execute();
     $stmt_update->close();
-    
+
     // Now fetch all vehicles with their current availability
     $sql = "
         SELECT 
@@ -52,6 +52,7 @@ try {
             c.rate_per_day,
             c.hourly_rate,
             c.status,
+            c.car_image,
             CASE 
                 WHEN EXISTS (
                     SELECT 1 FROM bookings b 
@@ -71,16 +72,16 @@ try {
         WHERE c.car_id IS NOT NULL
         ORDER BY c.car_name ASC
     ";
-    
+
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         throw new Exception("Failed to prepare vehicles query: " . $conn->error);
     }
-    
+
     $stmt->bind_param("ss", $current_datetime, $current_datetime);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $vehicles = array();
     while ($row = $result->fetch_assoc()) {
         // Ensure all numeric values are properly formatted
@@ -89,13 +90,13 @@ try {
         $row['status'] = (int)$row['status'];
         $row['is_available'] = (int)$row['is_available'];
         $row['active_bookings'] = (int)$row['active_bookings'];
-        
+
         $vehicles[] = $row;
     }
-    
+
     $stmt->close();
     $conn->close();
-    
+
     // Return success response
     echo json_encode([
         'status' => 'success',
@@ -104,7 +105,7 @@ try {
         'count' => count($vehicles),
         'timestamp' => $current_datetime
     ]);
-    
+
 } catch (Exception $e) {
     error_log("Get Vehicles Error: " . $e->getMessage());
     http_response_code(500);
@@ -114,4 +115,3 @@ try {
         'data' => []
     ]);
 }
-?>

@@ -44,7 +44,7 @@ try {
         // Handle file upload
         $uploaded_file_path = null;
         if (isset($_FILES['upload-image']) && $_FILES['upload-image']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = 'uploads/';
+            $upload_dir = 'uploads/documents/';
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0755, true);
             }
@@ -193,35 +193,7 @@ try {
             $total_cost = $hourly_rate * $billable_hours;
         }
 
-        // Get or create user
-        $sql_user = "SELECT user_id FROM users WHERE email = ? LIMIT 1";
-        $stmt_user = $conn->prepare($sql_user);
-        if (!$stmt_user) {
-            throw new Exception("User query prepare failed: " . $conn->error);
-        }
-        $stmt_user->bind_param("s", $customer_email);
-        $stmt_user->execute();
-        $result_user = $stmt_user->get_result();
-        
-        if ($result_user->num_rows === 0) {
-            // Create new user if doesn't exist
-            $sql_create_user = "INSERT INTO users (name, email, phone, created_at) VALUES (?, ?, ?, NOW())";
-            $stmt_create = $conn->prepare($sql_create_user);
-            if (!$stmt_create) {
-                throw new Exception("Create user query prepare failed: " . $conn->error);
-            }
-            $stmt_create->bind_param("sss", $customer_name, $customer_email, $customer_phone);
-            
-            if (!$stmt_create->execute()) {
-                throw new Exception("Error creating user account: " . $stmt_create->error);
-            }
-            
-            $user_id = $conn->insert_id;
-            $stmt_create->close();
-        } else {
-            $user_id = $result_user->fetch_assoc()['user_id'];
-        }
-        $stmt_user->close();
+        // REMOVED USER CREATION - No more user table dependency
 
         // Use return_location or default to pickup_location if empty
         $final_return_location = !empty($return_location) ? $return_location : $pickup_location;
@@ -230,13 +202,13 @@ try {
         $conn->begin_transaction();
 
         try {
-            // INSERT booking - DO NOT update car status automatically
+            // INSERT booking - REMOVED user_id field
             $sql_insert = "INSERT INTO bookings (
-                booking_reference, user_id, vehicle_id, customer_name, customer_phone, 
+                booking_reference, vehicle_id, customer_name, customer_phone, 
                 customer_email, license_number, start_date, end_date, start_time, 
                 end_time, pickup_location, return_location, purpose, passengers,
                 total_cost, rental_type, rental_duration_hours, total_hours,
-                pickup_time, return_time, status, created_at
+                pickup_time, return_time, uploaded_document, status, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
 
             $stmt_insert = $conn->prepare($sql_insert);
@@ -246,13 +218,13 @@ try {
                 $rental_duration_hours = $rental_duration ? (int)$rental_duration : null;
                 
                 $stmt_insert->bind_param(
-                    "siisssssssssssididsss",
-                    $booking_reference, $user_id, $car_id, $customer_name,
+                    "sissssssssssssidissss",
+                    $booking_reference, $car_id, $customer_name,
                     $customer_phone, $customer_email, $license_number, $pickup_date, 
                     $return_date, $pickup_time, $return_time, $pickup_location, 
                     $final_return_location, $purpose_requests, $passengers, $total_cost,
                     $rental_type, $rental_duration_hours, $total_hours,
-                    $pickup_time, $return_time
+                    $pickup_time, $return_time, $uploaded_file_path
                 );
 
                 if ($stmt_insert->execute()) {
