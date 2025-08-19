@@ -11,77 +11,101 @@ try {
     }
     require_once 'config/db.php';
     
-    // Check database connection
     if ($conn->connect_error) {
         throw new Exception("Database connection failed: " . $conn->connect_error);
     }
 
-    // Query to get all available vehicles
-    $sql = "SELECT 
-                car_id,
-                car_name,
-                brand,
-                plate_number,
-                rate_per_day,
-                hourly_rate,
-                status,
-                created_at
-            FROM cars 
-            WHERE status = 1 
-            ORDER BY car_name ASC";
+    // Get current date and time
+    $current_datetime = date('Y-m-d H:i:s');
     
-    $result = $conn->query($sql);
+    // First, update car status based on active bookings
+    $update_status_sql = "
+        UPDATE cars c 
+        SET c.status = CASE 
+            WHEN EXISTS (
+                SELECT 1 FROM bookings b 
+                WHERE b.vehicle_id = c.car_id 
+                AND b.status IN ('pending', 'confirmed', 'active')
+                AND CONCAT(b.start_date, ' ', b.start_time) <= ?
+                AND CONCAT(b.end_date, ' ', b.end_time) >= ?
+            ) THEN 0
+            ELSE 1
+        END
+    ";
     
-    if (!$result) {
-        throw new Exception("Query failed: " . $conn->error);
+    $stmt_update = $conn->prepare($update_status_sql);
+    if (!$stmt_update) {
+        throw new Exception("Failed to prepare status update query: " . $conn->error);
     }
+    
+    $stmt_update->bind_param("ss", $current_datetime, $current_datetime);
+    $stmt_update->execute();
+    $stmt_update->close();
+    
+    // Now fetch all vehicles with their current availability
+    $sql = "
+        SELECT 
+            c.car_id,
+            c.car_name,
+            c.brand,
+            c.plate_number,
+            c.rate_per_day,
+            c.hourly_rate,
+            c.status,
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1 FROM bookings b 
+                    WHERE b.vehicle_id = c.car_id 
+                    AND b.status IN ('pending', 'confirmed', 'active')
+                    AND CONCAT(b.start_date, ' ', b.start_time) <= ?
+                    AND CONCAT(b.end_date, ' ', b.end_time) >= ?
+                ) THEN 0
+                ELSE 1
+            END as is_available,
+            (
+                SELECT COUNT(*) FROM bookings b 
+                WHERE b.vehicle_id = c.car_id 
+                AND b.status IN ('pending', 'confirmed', 'active')
+            ) as active_bookings
+        FROM cars c 
+        WHERE c.car_id IS NOT NULL
+        ORDER BY c.car_name ASC
+    ";
+    
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        throw new Exception("Failed to prepare vehicles query: " . $conn->error);
+    }
+    
+    $stmt->bind_param("ss", $current_datetime, $current_datetime);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
     $vehicles = array();
-    
     while ($row = $result->fetch_assoc()) {
-        // Check if vehicle is currently available (not booked for today)
-        $availability_sql = "SELECT COUNT(*) as booking_count 
-                            FROM bookings 
-                            WHERE vehicle_id = ? 
-                            AND status IN ('confirmed', 'pending') 
-                            AND start_date <= CURDATE() 
-                            AND end_date >= CURDATE()";
+        // Ensure all numeric values are properly formatted
+        $row['rate_per_day'] = (float)$row['rate_per_day'];
+        $row['hourly_rate'] = (float)$row['hourly_rate'];
+        $row['status'] = (int)$row['status'];
+        $row['is_available'] = (int)$row['is_available'];
+        $row['active_bookings'] = (int)$row['active_bookings'];
         
-        $stmt = $conn->prepare($availability_sql);
-        $stmt->bind_param("i", $row['car_id']);
-        $stmt->execute();
-        $availability_result = $stmt->get_result();
-        $availability_data = $availability_result->fetch_assoc();
-        $stmt->close();
-        
-        // Determine availability status
-        $is_available = $availability_data['booking_count'] == 0;
-        
-        // Add vehicle data with availability
-        $vehicles[] = array(
-            'car_id' => $row['car_id'],
-            'car_name' => $row['car_name'],
-            'brand' => $row['brand'],
-            'plate_number' => $row['plate_number'],
-            'rate_per_day' => floatval($row['rate_per_day']),
-            'hourly_rate' => floatval($row['hourly_rate']),
-            'status' => intval($row['status']),
-            'is_available' => $is_available,
-            'availability_text' => $is_available ? 'Available' : 'Currently Booked',
-            'created_at' => $row['created_at']
-        );
+        $vehicles[] = $row;
     }
     
+    $stmt->close();
+    $conn->close();
+    
     // Return success response
-    http_response_code(200);
     echo json_encode([
         'status' => 'success',
         'data' => $vehicles,
-        'total_vehicles' => count($vehicles)
+        'message' => 'Vehicles loaded successfully',
+        'count' => count($vehicles),
+        'timestamp' => $current_datetime
     ]);
     
 } catch (Exception $e) {
-    // Log error and return error response
     error_log("Get Vehicles Error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
@@ -89,10 +113,5 @@ try {
         'message' => $e->getMessage(),
         'data' => []
     ]);
-} finally {
-    // Close database connection
-    if (isset($conn) && $conn) {
-        $conn->close();
-    }
 }
 ?>

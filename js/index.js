@@ -148,6 +148,9 @@ function renderVehicles() {
                     <i class="fas fa-car text-4xl text-gray-400 mb-4"></i>
                     <h3 class="text-xl font-semibold text-gray-700 mb-2">No Vehicles Available</h3>
                     <p class="text-gray-500 mb-4">Please check back later or contact us for assistance.</p>
+                    <button onclick="loadVehicles()" class="btn btn-primary">
+                        <i class="fas fa-refresh mr-2"></i>Refresh
+                    </button>
                 </div>
             `;
         }
@@ -170,17 +173,19 @@ function renderVehicles() {
         // Generate placeholder image URL with vehicle name
         const imageUrl = `https://placehold.co/400x250/${bgColor.replace('#', '')}/ffffff?text=${encodeURIComponent(vehicle.car_name)}`;
         
-        // Availability styling
-        const availabilityClass = vehicle.is_available ? 'text-green-600' : 'text-red-500';
-        const availabilityIcon = vehicle.is_available ? 'check-circle' : 'times-circle';
+        // Determine availability based on status field (1 = available, 0 = unavailable)
+        const isAvailable = vehicle.status == 1;
+        const availabilityClass = isAvailable ? 'text-green-600' : 'text-red-500';
+        const availabilityIcon = isAvailable ? 'check-circle' : 'times-circle';
+        const availabilityText = isAvailable ? 'Available' : 'Currently Booked';
         
         vehiclesHtml += `
-            <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden ${!vehicle.is_available ? 'opacity-75' : ''}" data-vehicle-id="${vehicle.car_id}">
+            <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden ${!isAvailable ? 'opacity-75' : ''}" data-vehicle-id="${vehicle.car_id}">
                 <div class="relative">
                     <img src="${imageUrl}" alt="${vehicle.car_name}" class="w-full h-48 object-cover">
                     <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-1 text-xs font-medium ${availabilityClass}">
                         <i class="fas fa-${availabilityIcon} mr-1"></i>
-                        ${vehicle.availability_text}
+                        ${availabilityText}
                     </div>
                 </div>
                 <div class="p-6">
@@ -219,11 +224,11 @@ function renderVehicles() {
                     </div>
                     
                     <button 
-                        class="btn w-full ${vehicle.is_available ? 'btn-primary' : 'bg-gray-400 text-white cursor-not-allowed'}" 
+                        class="btn w-full ${isAvailable ? 'btn-primary' : 'bg-gray-400 text-white cursor-not-allowed'}" 
                         data-vehicle="${vehicle.car_name}"
-                        onclick="${vehicle.is_available ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"
-                        ${!vehicle.is_available ? 'disabled' : ''}>
-                        ${vehicle.is_available ? 'Book Now' : 'Currently Unavailable'}
+                        onclick="${isAvailable ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"
+                        ${!isAvailable ? 'disabled' : ''}>
+                        ${isAvailable ? 'Book Now' : 'Currently Unavailable'}
                     </button>
                 </div>
             </div>
@@ -367,8 +372,22 @@ function showMessage(message, type = 'info') {
         messageContent.classList.add('text-gray-800');
     }
     
-    messageContent.innerHTML = `<p class="mb-4">${message}</p><button onclick="closeMessageModal()" class="btn btn-primary">OK</button>`;
+    // Use innerHTML instead of textContent to support HTML formatting
+    messageContent.innerHTML = `
+        <div class="mb-4">
+            ${message}
+        </div>
+        <button onclick="closeMessageModal()" class="btn btn-primary">OK</button>
+    `;
+    
     messageModal.style.display = 'flex';
+    if (type === 'success') {
+        setTimeout(() => {
+            if (messageModal.style.display === 'flex') {
+                closeMessageModal();
+            }
+        }, 5000);
+    }
 }
 
 function calculateRentalCost() {
@@ -537,28 +556,61 @@ function submitBookingToServer(formData) {
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
     submitButton.disabled = true;
 
+    // Log what we're sending for debugging
+    console.log('Submitting booking data...');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+
     // Make AJAX request to save_booking.php
     fetch('save_booking.php', {
         method: 'POST',
         body: formData
     })
     .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        // Check if response is OK
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.text().then(text => {
+                console.error('Error response body:', text);
+                throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+            });
         }
+        
+        // Parse JSON response
         return response.json();
     })
     .then(data => {
         console.log('Server response:', data);
         
         if (data.status === 'success') {
-            showMessage(
-                `Thank you! Your booking has been successfully submitted.<br>
-                <strong>Booking Reference:</strong> ${data.booking_reference}<br>
-                <strong>Total Cost:</strong> ₱${data.total_cost}<br>
-                We will contact you within 24 hours to confirm your reservation.`, 
-                "success"
-            );
+            // Create success message with proper HTML formatting
+            const successMessage = `
+                <div class="text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-4xl text-green-500 mb-2"></i>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Booking Successful!</h3>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div><strong>Booking Reference:</strong> <span class="font-mono text-blue-600">${data.booking_reference}</span></div>
+                        <div><strong>Vehicle:</strong> ${data.vehicle}</div>
+                        <div><strong>Total Cost:</strong> <span class="text-green-600 font-semibold">₱${data.total_cost}</span></div>
+                        <div><strong>Duration:</strong> ${data.total_hours} hours (${data.rental_type})</div>
+                        <div><strong>Pickup Date:</strong> ${data.pickup_date}</div>
+                        <div><strong>Return Date:</strong> ${data.return_date}</div>
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            We will contact you within 24 hours to confirm your reservation.
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            showMessage(successMessage, "success");
             
             // Reset form and close modal
             document.getElementById('booking-modal-form').reset();
@@ -568,18 +620,37 @@ function submitBookingToServer(formData) {
             
             // Refresh vehicle availability after successful booking
             setTimeout(() => {
+                console.log('Refreshing vehicle list...');
                 loadVehicles();
             }, 1000);
             
         } else {
-            showMessage(data.message || 'An error occurred while processing your booking.', "error");
+            // Show error message from server
+            const errorMessage = `
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Booking Failed</h3>
+                    <p class="text-red-600">${data.message || 'An error occurred while processing your booking.'}</p>
+                </div>
+            `;
+            showMessage(errorMessage, "error");
         }
     })
     .catch(error => {
         console.error('Error submitting booking:', error);
-        showMessage('Network error: Unable to submit booking. Please check your connection and try again.', "error");
+        
+        const networkErrorMessage = `
+            <div class="text-center">
+                <i class="fas fa-wifi text-4xl text-red-500 mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Connection Error</h3>
+                <p class="text-red-600 mb-2">Unable to submit booking. Please check your connection and try again.</p>
+                <p class="text-xs text-gray-500">Error: ${error.message}</p>
+            </div>
+        `;
+        showMessage(networkErrorMessage, "error");
     })
     .finally(() => {
+        // Restore button state
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
     });

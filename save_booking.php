@@ -4,7 +4,6 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// It's a good practice to use a try-catch block for database operations
 try {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -26,7 +25,7 @@ try {
             return $data;
         }
 
-        // Sanitize all inputs - using correct field names from HTML form
+        // Sanitize all inputs
         $customer_name = sanitize_input($_POST['customer_name'] ?? '');
         $customer_phone = sanitize_input($_POST['customer_phone'] ?? '');
         $customer_email = sanitize_input($_POST['customer_email'] ?? '');
@@ -87,13 +86,13 @@ try {
         $new_number = $last_number + 1;
         $booking_reference = "BK" . $year . str_pad($new_number, 4, '0', STR_PAD_LEFT);
 
-        // Get vehicle data - check both car_name and other possible column names
-        $sql_cars = "SELECT car_id, rate_per_day, hourly_rate FROM cars WHERE car_name = ? OR car_id = ? OR car_name = ? LIMIT 1";
+        // Get vehicle data
+        $sql_cars = "SELECT car_id, rate_per_day, hourly_rate, status FROM cars WHERE car_name = ? LIMIT 1";
         $stmt_cars = $conn->prepare($sql_cars);
         if (!$stmt_cars) {
             throw new Exception("Vehicle query prepare failed: " . $conn->error);
         }
-        $stmt_cars->bind_param("sss", $selected_vehicle, $selected_vehicle, $selected_vehicle);
+        $stmt_cars->bind_param("s", $selected_vehicle);
         $stmt_cars->execute();
         $result_cars = $stmt_cars->get_result();
 
@@ -108,6 +107,41 @@ try {
         $rate_per_day = $car_data['rate_per_day'];
         $hourly_rate = $car_data['hourly_rate'];
         $stmt_cars->close();
+
+        // Check for overlapping bookings (more comprehensive check)
+        $sql_check_overlap = "SELECT booking_id, booking_reference FROM bookings 
+                             WHERE vehicle_id = ? 
+                             AND status IN ('pending', 'confirmed', 'active')
+                             AND (
+                                 (CONCAT(start_date, ' ', start_time) <= CONCAT(?, ' ', ?) AND CONCAT(end_date, ' ', end_time) >= CONCAT(?, ' ', ?)) OR
+                                 (CONCAT(start_date, ' ', start_time) <= CONCAT(?, ' ', ?) AND CONCAT(end_date, ' ', end_time) >= CONCAT(?, ' ', ?)) OR
+                                 (CONCAT(start_date, ' ', start_time) >= CONCAT(?, ' ', ?) AND CONCAT(end_date, ' ', end_time) <= CONCAT(?, ' ', ?))
+                             )";
+        $stmt_overlap = $conn->prepare($sql_check_overlap);
+        if (!$stmt_overlap) {
+            throw new Exception("Overlap check prepare failed: " . $conn->error);
+        }
+        $stmt_overlap->bind_param("issssssssssss", 
+            $car_id, 
+            $pickup_date, $pickup_time, $pickup_date, $pickup_time,
+            $return_date, $return_time, $return_date, $return_time,
+            $pickup_date, $pickup_time, $return_date, $return_time
+        );
+        $stmt_overlap->execute();
+        $result_overlap = $stmt_overlap->get_result();
+        
+        if ($result_overlap->num_rows > 0) {
+            $conflict = $result_overlap->fetch_assoc();
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error', 
+                'message' => 'This vehicle is already booked for the selected dates. Conflicting booking: ' . $conflict['booking_reference'],
+                'conflict_booking' => $conflict['booking_reference']
+            ]);
+            $stmt_overlap->close();
+            exit;
+        }
+        $stmt_overlap->close();
 
         // Calculate rental duration and cost
         $start_datetime_str = "{$pickup_date} {$pickup_time}";
@@ -140,7 +174,6 @@ try {
         
         if ($rental_duration && $rental_duration >= 8) {
             $total_hours = $rental_duration;
-            $rental_type = 'hourly';
         }
 
         // Determine rental type based on duration
@@ -193,58 +226,100 @@ try {
         // Use return_location or default to pickup_location if empty
         $final_return_location = !empty($return_location) ? $return_location : $pickup_location;
 
-        // INSERT statement matching your actual database schema
-        $sql_insert = "INSERT INTO bookings (
-            booking_reference, user_id, vehicle_id, customer_name, customer_phone, 
-            customer_email, license_number, start_date, end_date, start_time, 
-            end_time, pickup_location, return_location, purpose, passengers,
-            total_cost, rental_type, rental_duration_hours, total_hours,
-            pickup_time, return_time, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+        // START TRANSACTION for booking insertion
+        $conn->begin_transaction();
 
-        $stmt_insert = $conn->prepare($sql_insert);
+        try {
+            // INSERT booking - DO NOT update car status automatically
+            $sql_insert = "INSERT INTO bookings (
+                booking_reference, user_id, vehicle_id, customer_name, customer_phone, 
+                customer_email, license_number, start_date, end_date, start_time, 
+                end_time, pickup_location, return_location, purpose, passengers,
+                total_cost, rental_type, rental_duration_hours, total_hours,
+                pickup_time, return_time, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
 
-        if ($stmt_insert) {
-            // Convert rental_duration_hours to match expected type
-            $rental_duration_hours = $rental_duration ? (int)$rental_duration : null;
-            
-            $stmt_insert->bind_param(
-                "siisssssssssssididsss",
-                $booking_reference, $user_id, $car_id, $customer_name,
-                $customer_phone, $customer_email, $license_number, $pickup_date, 
-                $return_date, $pickup_time, $return_time, $pickup_location, 
-                $final_return_location, $purpose_requests, $passengers, $total_cost,
-                $rental_type, $rental_duration_hours, $total_hours,
-                $pickup_time, $return_time
-            );
+            $stmt_insert = $conn->prepare($sql_insert);
 
-            if ($stmt_insert->execute()) {
-                $booking_id = $conn->insert_id;
+            if ($stmt_insert) {
+                // Convert rental_duration_hours to match expected type
+                $rental_duration_hours = $rental_duration ? (int)$rental_duration : null;
                 
-                // Prepare response data
-                $response_data = [
-                    'status' => 'success', 
-                    'message' => 'Your booking has been successfully submitted!',
-                    'booking_reference' => $booking_reference,
-                    'booking_id' => $booking_id,
-                    'total_cost' => number_format($total_cost, 2),
-                    'total_hours' => round($total_hours, 2),
-                    'rental_type' => $rental_type,
-                    'vehicle' => $selected_vehicle,
-                    'pickup_date' => $pickup_date,
-                    'return_date' => $return_date
-                ];
-                
-                http_response_code(200);
-                echo json_encode($response_data);
-                
+                $stmt_insert->bind_param(
+                    "siisssssssssssididsss",
+                    $booking_reference, $user_id, $car_id, $customer_name,
+                    $customer_phone, $customer_email, $license_number, $pickup_date, 
+                    $return_date, $pickup_time, $return_time, $pickup_location, 
+                    $final_return_location, $purpose_requests, $passengers, $total_cost,
+                    $rental_type, $rental_duration_hours, $total_hours,
+                    $pickup_time, $return_time
+                );
+
+                if ($stmt_insert->execute()) {
+                    $booking_id = $conn->insert_id;
+                    
+                    // UPDATE VEHICLE STATUS based on current and future bookings
+                    $sql_update_vehicle = "
+                        UPDATE cars 
+                        SET status = CASE 
+                            WHEN EXISTS (
+                                SELECT 1 FROM bookings 
+                                WHERE vehicle_id = ? 
+                                AND status IN ('pending', 'confirmed', 'active')
+                                AND CONCAT(start_date, ' ', start_time) <= NOW()
+                                AND CONCAT(end_date, ' ', end_time) >= NOW()
+                            ) THEN 0
+                            ELSE 1
+                        END 
+                        WHERE car_id = ?
+                    ";
+                    $stmt_update = $conn->prepare($sql_update_vehicle);
+                    if (!$stmt_update) {
+                        throw new Exception("Vehicle update prepare failed: " . $conn->error);
+                    }
+                    
+                    $stmt_update->bind_param("ii", $car_id, $car_id);
+                    if (!$stmt_update->execute()) {
+                        throw new Exception("Error updating vehicle availability: " . $stmt_update->error);
+                    }
+                    $stmt_update->close();
+                    
+                    // Commit the transaction
+                    $conn->commit();
+                    
+                    // Prepare response data
+                    $response_data = [
+                        'status' => 'success', 
+                        'message' => 'Your booking has been successfully submitted!',
+                        'booking_reference' => $booking_reference,
+                        'booking_id' => $booking_id,
+                        'total_cost' => number_format($total_cost, 2),
+                        'total_hours' => round($total_hours, 2),
+                        'rental_type' => $rental_type,
+                        'vehicle' => $selected_vehicle,
+                        'pickup_date' => $pickup_date,
+                        'return_date' => $return_date,
+                        'pickup_time' => $pickup_time,
+                        'return_time' => $return_time
+                    ];
+                    
+                    http_response_code(200);
+                    echo json_encode($response_data);
+                    
+                } else {
+                    throw new Exception("Error saving your booking: " . $stmt_insert->error);
+                }
+                $stmt_insert->close();
             } else {
-                throw new Exception("Error saving your booking: " . $stmt_insert->error);
+                throw new Exception("Database error occurred while preparing insert statement: " . $conn->error);
             }
-            $stmt_insert->close();
-        } else {
-            throw new Exception("Database error occurred while preparing insert statement: " . $conn->error);
+            
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $conn->rollback();
+            throw $e;
         }
+        
     } else {
         http_response_code(405);
         echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
