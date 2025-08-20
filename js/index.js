@@ -10,49 +10,7 @@ let vehiclesData = [];
 let vehiclePricing = {};
 
 // Vehicle type mappings for features and descriptions
-const vehicleTypeConfig = {
-    'Vios': {
-        passengers: 4,
-        transmission: 'Automatic',
-        feature3: 'Fuel Efficient',
-        description: 'Perfect for city driving and business trips',
-        color: 'blue',
-        iconFeature3: 'gas-pump'
-    },
-    'Innova': {
-        passengers: 7,
-        transmission: 'Manual',
-        feature3: 'Large Cargo',
-        description: 'Spacious family vehicle for group travels',
-        color: 'yellow',
-        iconFeature3: 'suitcase'
-    },
-    'City': {
-        passengers: 4,
-        transmission: 'CVT',
-        feature3: 'Eco-Friendly',
-        description: 'Reliable and fuel efficient sedan',
-        color: 'blue',
-        iconFeature3: 'leaf'
-    },
-    'Xpander': {
-        passengers: 7,
-        transmission: 'Automatic',
-        feature3: 'Safety Features',
-        description: 'Modern MPV with stylish design',
-        color: 'yellow',
-        iconFeature3: 'shield-alt'
-    },
-    // Default configuration for unknown vehicle types
-    'default': {
-        passengers: 4,
-        transmission: 'Automatic',
-        feature3: 'Modern Features',
-        description: 'Quality vehicle for your travel needs',
-        color: 'blue',
-        iconFeature3: 'car'
-    }
-};
+
 
 // Function to get vehicle configuration
 function getVehicleConfig(carName) {

@@ -49,49 +49,51 @@
     </section>
 
     <section class="quick-booking">
-        <div class="container mx-auto px-4">
-            <form id="quick-booking-form" class="booking-form">
-                <div class="form-group">
-                    <label for="pickup-location" class="block text-gray-700">Pickup Location</label>
-                    <select id="pickup-location" name="pickup_location" required>
-                        <option value="">Select Location</option>
-                        <option value="gensan-airport">GenSan Airport</option>
-                        <option value="downtown-gensan">Downtown GenSan</option>
-                        <option value="kcc-mall">KCC Mall</option>
-                        <option value="robinsons-place">Robinson's Place GenSan</option>
-                        <option value="sm-city-gensan">SM City General Santos</option>
-                    </select>
-                </div>
+    <div class="container mx-auto px-4">
+        <!-- Main Form -->
+        <form id="quick-booking-form" class="booking-form" action="available_car.php" method="GET">
+            
+            <div class="form-group">
+                <label for="pickup-location" class="block text-gray-700">Pickup Location</label>
+                <select id="pickup-location" name="pickup_location" required>
+                    <option value="">Select Location</option>
+                    <option value="gensan-airport">GenSan Airport</option>
+                    <option value="downtown-gensan">Downtown GenSan</option>
+                    <option value="kcc-mall">KCC Mall</option>
+                    <option value="robinsons-place">Robinson's Place GenSan</option>
+                    <option value="sm-city-gensan">SM City General Santos</option>
+                </select>
+            </div>
 
-                <div class="form-group">
-                    <label for="pickup-date" class="block text-gray-700">Pickup Date</label>
-                    <input type="date" id="pickup-date" name="pickup_date" required>
-                </div>
+            <div class="form-group">
+                <label for="pickup-date" class="block text-gray-700">Pickup Date</label>
+                <input type="date" id="pickup-date" name="pickup_date" required>
+            </div>
 
-                <div class="form-group">
-                    <label for="pickup-time" class="block text-gray-700">Pickup Time</label>
-                    <input type="time" id="pickup-time" name="pickup_time" value="09:00" required>
-                </div>
+            <div class="form-group">
+                <label for="pickup-time" class="block text-gray-700">Pickup Time</label>
+                <input type="time" id="pickup-time" name="pickup_time" value="09:00" required>
+            </div>
 
-                <div class="form-group">
-                    <label for="return-date" class="block text-gray-700">Return Date</label>
-                    <input type="date" id="return-date" name="return_date" required>
-                </div>
+            <div class="form-group">
+                <label for="return-date" class="block text-gray-700">Return Date</label>
+                <input type="date" id="return-date" name="return_date" required>
+            </div>
 
-                <div class="form-group">
-                    <label for="return-time" class="block text-gray-700">Return Time</label>
-                    <input type="time" id="return-time" name="return_time" value="09:00" required>
-                </div>
+            <div class="form-group">
+                <label for="return-time" class="block text-gray-700">Return Time</label>
+                <input type="time" id="return-time" name="return_time" value="09:00" required>
+            </div>
 
-                <div class="flex items-end justify-center col-span-full md:col-span-1">
-                    <button type="submit" class="btn btn-search flex-1 w-full md:w-auto">
-                        <i class="fas fa-search mr-2"></i> Find Cars
-                    </button>
-                    <form id="quick-booking-form" class="booking-form" action="search-available_car.php" method="GET">
-                </div>
-            </form>
-        </div>
-    </section>
+            <div class="flex items-end justify-center col-span-full md:col-span-1">
+                <button type="submit" class="btn btn-search flex-1 w-full md:w-auto">
+                    <i class="fas fa-search mr-2"></i> Find Cars
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
 
     <!-- Featured Vehicles Section - This will be populated by JavaScript -->
     <section class="featured-vehicles py-16" id="vehicles">
