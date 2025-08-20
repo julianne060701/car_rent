@@ -181,7 +181,6 @@ if (isset($_POST['edit_car'])) {
             border-radius: 5px;
             border: 1px solid #ddd;
         }
-        
     </style>
 </head>
 
@@ -209,14 +208,9 @@ if (isset($_POST['edit_car'])) {
                         <thead>
                         <tr>
                             <th>Image</th>
-                            <th>Car ID</th>
                             <th>Car Name</th>
                             <th>Brand</th>
                             <th>Plate Number</th>
-                            <th>Rate 6h</th>
-                            <th>Rate 8h</th>
-                            <th>Rate 12h</th>
-                            <th>Rate 24h</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -226,26 +220,80 @@ if (isset($_POST['edit_car'])) {
                         $result = $conn->query("SELECT * FROM cars ORDER BY car_id DESC");
                         while ($row = $result->fetch_assoc()) {
                             $image_src = $row['car_image'] ? '../uploads/cars/' . $row['car_image'] : '../assets/img/no-image.png';
+                            $status_text = '';
+                            switch($row['status']) {
+                                case 3:
+                                    $status_text = '<span class="badge badge-danger">Booked</span>';
+                                    break;
+                                case 2:
+                                    $status_text = '<span class="badge badge-warning">Pending</span>';
+                                    break;
+                                case 1:
+                                    $status_text = '<span class="badge badge-success">Available</span>';
+                                    break;
+                                case 0:
+                                    $status_text = '<span class="badge badge-secondary">Unavailable</span>';
+                                    break;
+                            }
+                            
                             echo "<tr>
-                                <td><img src='{$image_src}' class='car-image' alt='Car Image' onerror=\"this.src='../assets/img/no-image.png'\"></td>
-                                <td>{$row['car_id']}</td>
-                                <td>{$row['car_name']}</td>
-                                <td>{$row['brand']}</td>
-                                <td>{$row['plate_number']}</td>
-                                <td>₱" . number_format($row['rate_6h'], 2) . "</td>
-                                <td>₱" . number_format($row['rate_8h'], 2) . "</td>
-                                <td>₱" . number_format($row['rate_12h'], 2) . "</td>
-                                <td>₱" . number_format($row['rate_24h'], 2) . "</td>
-                                <td>" . ($row['status'] == 1 ? 'Available' : 'Unavailable') . "</td>
-                                <td>
-                                    <button class='btn btn-warning btn-sm' data-toggle='modal' data-target='#editCarModal{$row['car_id']}'>
-                                        <i class='fas fa-edit'></i> Edit
-                                    </button>
-                                    <a href='delete_car.php?id={$row['car_id']}' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure?\")'>
-                                        <i class='fas fa-trash'></i> Delete
-                                    </a>
-                                </td>
+                                    <td><img src='" . htmlspecialchars($image_src) . "' class='car-image' alt='Car Image' onerror=\"this.src='../assets/img/no-image.png'\"></td>
+                                    <td>" . htmlspecialchars($row['car_name']) . "</td>
+                                    <td>" . htmlspecialchars($row['brand']) . "</td>
+                                    <td>" . htmlspecialchars($row['plate_number']) . "</td>
+                                    <td>{$status_text}</td>
+                                    <td>
+                                        <button class='btn btn-info btn-sm' data-toggle='modal' data-target='#viewCarModal{$row['car_id']}'>
+                                            <i class='fas fa-eye'></i>
+                                        </button>
+                                        <button class='btn btn-warning btn-sm' data-toggle='modal' data-target='#editCarModal{$row['car_id']}'>
+                                            <i class='fas fa-edit'></i> 
+                                        </button>
+                                    </td>
                             </tr>";
+
+                            // View Modal for each car
+                            echo "
+                            <div class='modal fade' id='viewCarModal{$row['car_id']}' tabindex='-1'>
+                                <div class='modal-dialog modal-lg'>
+                                    <div class='modal-content'>
+                                        <div class='modal-header'>
+                                            <h5 class='modal-title'>Car Details</h5>
+                                            <button type='button' class='close' data-dismiss='modal'>&times;</button>
+                                        </div>
+                                        <div class='modal-body'>
+                                            <div class='row'>
+                                                <div class='col-md-4 text-center'>
+                                                    <img src='" . htmlspecialchars($image_src) . "' class='img-fluid rounded border' alt='Car Image' onerror=\"this.src='../assets/img/no-image.png'\">
+                                                </div>
+                                                <div class='col-md-8'>
+                                                    <h4>" . htmlspecialchars($row['car_name']) . " <small class='text-muted'>(" . htmlspecialchars($row['brand']) . ")</small></h4>
+                                                    <p><strong>Plate Number:</strong> " . htmlspecialchars($row['plate_number']) . "</p>
+                                                    <p><strong>Description:</strong> " . nl2br(htmlspecialchars($row['description'])) . "</p>
+                                                    <p><strong>Passenger Seater:</strong> " . htmlspecialchars($row['passenger_seater']) . "</p>
+                                                    <p><strong>Transmission:</strong> " . htmlspecialchars($row['transmission']) . "</p>
+                                                    <p><strong>Status:</strong> {$status_text}</p>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class='row'>
+                                                <div class='col-md-6'>
+                                                    <p><strong>6 Hours:</strong> ₱" . number_format($row['rate_6h'],2) . "</p>
+                                                    <p><strong>8 Hours:</strong> ₱" . number_format($row['rate_8h'],2) . "</p>
+                                                </div>
+                                                <div class='col-md-6'>
+                                                    <p><strong>12 Hours:</strong> ₱" . number_format($row['rate_12h'],2) . "</p>
+                                                    <p><strong>24 Hours:</strong> ₱" . number_format($row['rate_24h'],2) . "</p>
+                                                </div>
+                                            </div>
+                                            <p class='text-muted'><small>Created at: " . date("F d, Y h:i A", strtotime($row['created_at'])) . "</small></p>
+                                        </div>
+                                        <div class='modal-footer'>
+                                            <button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>";
 
                             // Edit Modal for each car
                             echo "
@@ -264,27 +312,64 @@ if (isset($_POST['edit_car'])) {
                                                     <div class='col-md-8'>
                                                         <div class='form-group'>
                                                             <label>Car Name</label>
-                                                            <input type='text' name='car_name' value='{$row['car_name']}' class='form-control' required>
+                                                            <input type='text' name='car_name' value='" . htmlspecialchars($row['car_name']) . "' class='form-control' required>
                                                         </div>
                                                         <div class='form-group'>
                                                             <label>Brand</label>
-                                                            <input type='text' name='brand' value='{$row['brand']}' class='form-control' required>
+                                                            <input type='text' name='brand' value='" . htmlspecialchars($row['brand']) . "' class='form-control' required>
                                                         </div>
                                                         <div class='form-group'>
                                                             <label>Plate Number</label>
-                                                            <input type='text' name='plate_number' value='{$row['plate_number']}' class='form-control' required>
+                                                            <input type='text' name='plate_number' value='" . htmlspecialchars($row['plate_number']) . "' class='form-control' required>
                                                         </div>
                                                     </div>
                                                     <div class='col-md-4'>
                                                         <div class='form-group'>
                                                             <label>Current Image</label><br>
-                                                            <img src='{$image_src}' class='current-image' alt='Current Car Image' onerror=\"this.src='../assets/img/no-image.png'\">
+                                                            <img src='" . htmlspecialchars($image_src) . "' class='current-image' alt='Current Car Image' onerror=\"this.src='../assets/img/no-image.png'\">
                                                         </div>
                                                         <div class='form-group'>
                                                             <label>Upload New Image (Optional)</label>
                                                             <input type='file' name='car_image' class='form-control-file' accept='image/*' onchange='previewEditImage(this, {$row['car_id']})'>
                                                             <small class='text-muted'>Max size: 5MB. Formats: JPG, PNG, GIF</small>
                                                             <img id='editImagePreview{$row['car_id']}' class='image-preview' style='display:none;'>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class='row'>
+                                                    <div class='col-md-12'>
+                                                        <div class='form-group'>
+                                                            <label>Description</label>
+                                                            <textarea name='description' class='form-control' rows='3'>" . htmlspecialchars($row['description']) . "</textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class='row'>
+                                                    <div class='col-md-6'>
+                                                        <div class='form-group'>
+                                                            <label>Passenger Seater</label>
+                                                            <select name='passenger_seater' class='form-control' required>
+                                                                <option value=''>Select Passenger Count</option>
+                                                                <option value='2' " . ($row['passenger_seater'] == 2 ? 'selected' : '') . ">2 Seater</option>
+                                                                <option value='4' " . ($row['passenger_seater'] == 4 ? 'selected' : '') . ">4 Seater</option>
+                                                                <option value='5' " . ($row['passenger_seater'] == 5 ? 'selected' : '') . ">5 Seater</option>
+                                                                <option value='7' " . ($row['passenger_seater'] == 7 ? 'selected' : '') . ">7 Seater</option>
+                                                                <option value='8' " . ($row['passenger_seater'] == 8 ? 'selected' : '') . ">8 Seater</option>
+                                                                <option value='9' " . ($row['passenger_seater'] == 9 ? 'selected' : '') . ">9 Seater</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class='col-md-6'>
+                                                        <div class='form-group'>
+                                                            <label>Transmission</label>
+                                                            <select name='transmission' class='form-control' required>
+                                                                <option value=''>Select Transmission</option>
+                                                                <option value='Manual' " . ($row['transmission'] == 'Manual' ? 'selected' : '') . ">Manual</option>
+                                                                <option value='Automatic' " . ($row['transmission'] == 'Automatic' ? 'selected' : '') . ">Automatic</option>
+                                                                <option value='CVT' " . ($row['transmission'] == 'CVT' ? 'selected' : '') . ">CVT</option>
+                                                            </select>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -315,6 +400,8 @@ if (isset($_POST['edit_car'])) {
                                                 <div class='form-group'>
                                                     <label>Status</label>
                                                     <select name='status' class='form-control'>
+                                                        <option value='3' " . ($row['status'] == 3 ? 'selected' : '') . ">Booked</option>
+                                                        <option value='2' " . ($row['status'] == 2 ? 'selected' : '') . ">Pending</option>
                                                         <option value='1' " . ($row['status'] == 1 ? 'selected' : '') . ">Available</option>
                                                         <option value='0' " . ($row['status'] == 0 ? 'selected' : '') . ">Unavailable</option>
                                                     </select>
@@ -373,6 +460,43 @@ if (isset($_POST['edit_car'])) {
                         </div>
                         
                         <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea name="description" class="form-control" rows="3" placeholder="Enter car description..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Passenger Seater</label>
+                                    <select name="passenger_seater" class="form-control" required>
+                                        <option value="">Select Passenger Count</option>
+                                        <option value="2">2 Seater</option>
+                                        <option value="4">4 Seater</option>
+                                        <option value="5">5 Seater</option>
+                                        <option value="7">7 Seater</option>
+                                        <option value="8">8 Seater</option>
+                                        <option value="9">9 Seater</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Transmission</label>
+                                    <select name="transmission" class="form-control" required>
+                                        <option value="">Select Transmission</option>
+                                        <option value="Manual">Manual</option>
+                                        <option value="Automatic">Automatic</option>
+                                        <option value="CVT">CVT</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Rate for 6 Hours (₱)</label>
@@ -400,6 +524,8 @@ if (isset($_POST['edit_car'])) {
                             <select name="status" class="form-control">
                                 <option value="1">Available</option>
                                 <option value="0">Unavailable</option>
+                                <option value="2">Pending</option>
+                                <option value="3">Booked</option>
                             </select>
                         </div>
                     </div>
