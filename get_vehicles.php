@@ -19,7 +19,8 @@ try {
     $start_datetime = isset($_REQUEST['start_datetime']) ? $_REQUEST['start_datetime'] : date('Y-m-d H:i:s');
     $end_datetime = isset($_REQUEST['end_datetime']) ? $_REQUEST['end_datetime'] : date('Y-m-d H:i:s', strtotime('+1 day'));
 
-    // First, update car status based on active bookings
+    // Update car status based on active bookings
+    // Status: 3 = Booked, 2 = Pending, 1 = Available, 0 = Unavailable
     $update_status_sql = "
         UPDATE cars c 
         SET c.status = CASE 
@@ -29,9 +30,10 @@ try {
                 AND b.status IN ('pending', 'confirmed', 'active')
                 AND CONCAT(b.start_date, ' ', b.start_time) <= ?
                 AND CONCAT(b.end_date, ' ', b.end_time) >= ?
-            ) THEN 0
+            ) THEN 3
             ELSE 1
         END
+        WHERE c.status NOT IN (0)  -- Don't override manually set unavailable status
     ";
     
     $stmt_update = $conn->prepare($update_status_sql);
@@ -43,34 +45,46 @@ try {
     $stmt_update->execute();
     $stmt_update->close();
     
-    // Now fetch all vehicles with their current availability
+    // Fetch all vehicles with their current availability
     $sql = "
     SELECT 
         c.car_id,
         c.car_name,
         c.brand,
         c.plate_number,
-        c.rate_per_day,
-        c.hourly_rate,
+        GREATEST(COALESCE(c.rate_per_day, 0), COALESCE(c.rate_24h, 0), 1000) as rate_per_day,
+        GREATEST(COALESCE(c.hourly_rate, 0), COALESCE(c.rate_8h, 0)/8, 125) as hourly_rate,
+        COALESCE(c.rate_6h, 0) as rate_6h,
+        COALESCE(c.rate_8h, 0) as rate_8h,
+        COALESCE(c.rate_12h, 0) as rate_12h,
+        COALESCE(c.rate_24h, 0) as rate_24h,
         c.status,
+        c.car_image,
         CASE 
-            WHEN EXISTS (
+            WHEN c.status = 1 AND NOT EXISTS (
                 SELECT 1 FROM bookings b 
                 WHERE b.car_id = c.car_id 
                 AND b.status IN ('pending', 'confirmed', 'active')
                 AND CONCAT(b.start_date, ' ', b.start_time) <= ?
                 AND CONCAT(b.end_date, ' ', b.end_time) >= ?
-            ) THEN 0
-            ELSE 1
+            ) THEN 1
+            ELSE 0
         END as is_available,
         (
             SELECT COUNT(*) FROM bookings b 
             WHERE b.car_id = c.car_id 
             AND b.status IN ('pending', 'confirmed', 'active')
-        ) as active_bookings
+        ) as active_bookings,
+        CASE c.status
+            WHEN 1 THEN 'Available'
+            WHEN 2 THEN 'Pending'
+            WHEN 3 THEN 'Booked'
+            WHEN 0 THEN 'Unavailable'
+            ELSE 'Unknown'
+        END as status_text
     FROM cars c 
     WHERE c.car_id IS NOT NULL
-    ORDER BY c.car_name ASC
+    ORDER BY c.status ASC, c.car_name ASC
 ";
     
     $stmt = $conn->prepare($sql);
@@ -87,9 +101,26 @@ try {
         // Ensure all numeric values are properly formatted
         $row['rate_per_day'] = (float)$row['rate_per_day'];
         $row['hourly_rate'] = (float)$row['hourly_rate'];
+        $row['rate_6h'] = (float)$row['rate_6h'];
+        $row['rate_8h'] = (float)$row['rate_8h'];
+        $row['rate_12h'] = (float)$row['rate_12h'];
+        $row['rate_24h'] = (float)$row['rate_24h'];
         $row['status'] = (int)$row['status'];
         $row['is_available'] = (int)$row['is_available'];
         $row['active_bookings'] = (int)$row['active_bookings'];
+        
+        // Ensure minimum rates if still zero
+        if ($row['rate_per_day'] <= 0) {
+            $row['rate_per_day'] = 2000.00;
+        }
+        if ($row['hourly_rate'] <= 0) {
+            $row['hourly_rate'] = 250.00;
+        }
+        
+        // Add image URL if exists
+        if (!empty($row['car_image'])) {
+            $row['image_url'] = 'uploads/' . $row['car_image'];
+        }
         
         $vehicles[] = $row;
     }

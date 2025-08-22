@@ -55,6 +55,7 @@
                 <label for="pickup-location" class="block text-gray-700">Pickup Location</label>
                 <select id="pickup-location" name="pickup_location" required>
                     <option value="">Select Location</option>
+                    <option value="store">Store</option>
                     <option value="gensan-airport">GenSan Airport</option>
                     <option value="downtown-gensan">Downtown GenSan</option>
                     <option value="kcc-mall">KCC Mall</option>
@@ -253,6 +254,7 @@
                         <label for="return-location-modal" class="block text-gray-700 font-medium mb-1">Return Location</label>
                         <select id="return-location-modal" name="return_location" class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Same as pickup</option>
+                            <option value="store">Store</option>
                             <option value="gensan-airport">GenSan Airport</option>
                             <option value="downtown-gensan">Downtown GenSan</option>
                             <option value="kcc-mall">KCC Mall</option>

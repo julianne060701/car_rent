@@ -9,48 +9,28 @@ let vehiclesData = [];
 // Vehicle pricing will be loaded dynamically from database
 let vehiclePricing = {};
 
+// Location pricing configuration
+const locationPricing = {
+    'store': 0,
+    'gensan-airport': 500,
+    'downtown-gensan': 300,
+    'kcc-mall': 500,
+    'robinsons-place': 400,
+    'sm-city-gensan': 400
+};
+
 // Vehicle type mappings for features and descriptions
 const vehicleTypeConfig = {
     'Vios': {
-        passengers: 4,
-        transmission: 'Automatic',
-        feature3: 'Fuel Efficient',
-        description: 'Perfect for city driving and business trips',
-        color: 'blue',
-        iconFeature3: 'gas-pump' 
     },
     'Innova': {
-        passengers: 7,
-        transmission: 'Manual',
-        feature3: 'Large Cargo',
-        description: 'Spacious family vehicle for group travels',
-        color: 'yellow',
-        iconFeature3: 'suitcase'
     },
     'City': {
-        passengers: 4,
-        transmission: 'CVT',
-        feature3: 'Eco-Friendly',
-        description: 'Reliable and fuel efficient sedan',
-        color: 'blue',
-        iconFeature3: 'leaf'
     },
     'Xpander': {
-        passengers: 7,
-        transmission: 'Automatic',
-        feature3: 'Safety Features',
-        description: 'Modern MPV with stylish design',
-        color: 'yellow',
-        iconFeature3: 'shield-alt'
     },
     // Default configuration for unknown vehicle types
     'default': {
-        passengers: 4,
-        transmission: 'Automatic',
-        feature3: 'Modern Features',
-        description: 'Quality vehicle for your travel needs',
-        color: 'blue',
-        iconFeature3: 'car'
     }
 };
 
@@ -64,6 +44,71 @@ function getVehicleConfig(carName) {
     }
     // Return default if no match found
     return vehicleTypeConfig.default;
+}
+
+// Function to calculate location charges
+function calculateLocationCharges(pickupLocation, returnLocation) {
+    let pickupCharge = locationPricing[pickupLocation] || 0;
+    let returnCharge = locationPricing[returnLocation] || 0;
+    
+    // Only charge for return location if it's different from pickup AND not empty
+    if (returnLocation && returnLocation.toLowerCase() !== "store") {
+        returnCharge = locationPricing[returnLocation] || 0;
+    }
+    
+    return {
+        pickupCharge: pickupCharge,
+        returnCharge: returnCharge,
+        totalLocationCharge: pickupCharge + returnCharge
+    };
+}
+function initializeLocationHandling() {
+    const pickupLocation = document.getElementById('pickup-location-modal');
+    const returnLocation = document.getElementById('return-location-modal');
+    
+    if (pickupLocation && returnLocation) {
+        pickupLocation.addEventListener('change', function() {
+            // Only auto-fill if return location is empty
+            if (!returnLocation.value || returnLocation.value === pickupLocation.value) {
+                returnLocation.value = ''; // Clear it to show it's optional
+                returnLocation.style.backgroundColor = '#f3f4f6';
+                returnLocation.title = 'Leave empty to return at pickup location (no extra charge)';
+            }
+            calculateRentalCost();
+        });
+        
+        returnLocation.addEventListener('change', function() {
+            if (this.value) {
+                this.style.backgroundColor = '';
+                this.title = '';
+            } else {
+                this.style.backgroundColor = '#f3f4f6';
+                this.title = 'Leave empty to return at pickup location (no extra charge)';
+            }
+            calculateRentalCost();
+        });
+        
+        // Add placeholder option to return location select
+        if (returnLocation.options.length > 0 && returnLocation.options[0].value !== '') {
+            const placeholderOption = new Option('Same as pickup location (Free)', '');
+            returnLocation.insertBefore(placeholderOption, returnLocation.firstChild);
+            returnLocation.value = ''; // Set default to empty
+        }
+    }
+}
+
+// Function to get location display name
+function getLocationDisplayName(locationKey) {
+    const locationNames = {
+        'store': 'Store (Main Office)',
+        'gensan-airport': 'GenSan Airport',
+        'downtown-gensan': 'Downtown GenSan',
+        'kcc-mall': 'KCC Mall',
+        'robinsons-place': "Robinson's Place GenSan",
+        'sm-city-gensan': 'SM City General Santos'
+    };
+    
+    return locationNames[locationKey] || locationKey;
 }
 
 // Function to load vehicles from database
@@ -86,7 +131,11 @@ async function loadVehicles() {
             vehiclesData.forEach(vehicle => {
                 vehiclePricing[vehicle.car_name] = {
                     dailyRate: vehicle.rate_per_day,
-                    hourlyRate: vehicle.hourly_rate
+                    hourlyRate: vehicle.hourly_rate,
+                    rate6h: parseFloat(vehicle.rate_6h) || 0,
+                    rate8h: parseFloat(vehicle.rate_8h) || 0,
+                    rate12h: parseFloat(vehicle.rate_12h) || 0,
+                    rate24h: parseFloat(vehicle.rate_per_day) || 0
                 };
             });
             
@@ -135,7 +184,7 @@ function renderVehicles() {
     const vehiclesContainer = document.querySelector('#vehicles-grid');
     const loadingElement = document.getElementById('vehicles-loading');
     
-    // Hide loading spinner in all cases
+    // Hide loading spinner
     if (loadingElement) {
         loadingElement.style.display = 'none';
     }
@@ -157,35 +206,84 @@ function renderVehicles() {
         return;
     }
     
-    console.log('Rendering vehicles...');
+    console.log('Rendering vehicles...', vehiclesData);
     
     let vehiclesHtml = '';
     
-   vehiclesData.forEach((vehicle) => {
+    vehiclesData.forEach((vehicle) => {
         const config = getVehicleConfig(vehicle.car_name);
         const colorClass = config.color === 'yellow' ? 'yellow' : 'blue';
         const bgColor = colorClass === 'yellow' ? '#f59e0b' : '#3b82f6';
         
-        // Format pricing
-        const dailyRate = parseFloat(vehicle.rate_per_day);
-        const hourlyRate = parseFloat(vehicle.hourly_rate);
+        // Format pricing - use the actual values from database
+        let dailyRate = parseFloat(vehicle.rate_per_day) || parseFloat(vehicle.rate_24h) || 2000;
+        let hourlyRate = parseFloat(vehicle.hourly_rate) || (parseFloat(vehicle.rate_8h) / 8) || 250;
         
-        // Generate placeholder image URL with vehicle name
-        const imageUrl = `https://placehold.co/400x250/${bgColor.replace('#', '')}/ffffff?text=${encodeURIComponent(vehicle.car_name)}`;
+        // If we have specific hour rates, use them
+        const rate6h = parseFloat(vehicle.rate_6h) || 0;
+        const rate8h = parseFloat(vehicle.rate_8h) || 0;
+        const rate12h = parseFloat(vehicle.rate_12h) || 0;
+        const rate24h = parseFloat(vehicle.rate_24h) || 0;
         
-        // Determine availability based on status field (1 = available, 0 = unavailable)
-        const isAvailable = vehicle.status == 1;
-        const availabilityClass = isAvailable ? 'text-green-600' : 'text-red-500';
-        const availabilityIcon = isAvailable ? 'check-circle' : 'times-circle';
-        const availabilityText = isAvailable ? 'Available' : 'Currently Booked';
+        // Use 24h rate as daily rate if available
+        if (rate24h > 0) {
+            dailyRate = rate24h;
+        }
+        
+        // Calculate hourly rate from available data
+        if (rate8h > 0) {
+            hourlyRate = rate8h / 8;
+        } else if (rate6h > 0) {
+            hourlyRate = rate6h / 6;
+        } else if (rate12h > 0) {
+            hourlyRate = rate12h / 12;
+        }
+        
+        console.log(`Vehicle: ${vehicle.car_name}, Daily: ${dailyRate}, Hourly: ${hourlyRate.toFixed(2)}`);
+        
+        // Use actual image if available, otherwise placeholder
+        let imageUrl;
+        if (vehicle.image_url && vehicle.image_url !== 'uploads/') {
+            imageUrl = vehicle.image_url;
+        } else {
+            imageUrl = `https://placehold.co/400x250/${bgColor.replace('#', '')}/ffffff?text=${encodeURIComponent(vehicle.car_name)}`;
+        }
+        
+        // Status mapping: 3 = Booked, 2 = Pending, 1 = Available, 0 = Unavailable
+        const isAvailable = vehicle.status === 1 && vehicle.is_available === 1;
+        let statusClass, statusIcon, statusText;
+        
+        switch (vehicle.status) {
+            case 1:
+                statusClass = 'text-green-600';
+                statusIcon = 'check-circle';
+                statusText = 'Available';
+                break;
+            case 2:
+                statusClass = 'text-yellow-600';
+                statusIcon = 'clock';
+                statusText = 'Pending';
+                break;
+            case 3:
+                statusClass = 'text-red-500';
+                statusIcon = 'times-circle';
+                statusText = 'Booked';
+                break;
+            case 0:
+            default:
+                statusClass = 'text-gray-500';
+                statusIcon = 'ban';
+                statusText = 'Unavailable';
+                break;
+        }
         
         vehiclesHtml += `
             <div class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden ${!isAvailable ? 'opacity-75' : ''}" data-vehicle-id="${vehicle.car_id}">
                 <div class="relative">
-                    <img src="${imageUrl}" alt="${vehicle.car_name}" class="w-full h-48 object-cover">
-                    <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-1 text-xs font-medium ${availabilityClass}">
-                        <i class="fas fa-${availabilityIcon} mr-1"></i>
-                        ${availabilityText}
+                    <img src="${imageUrl}" alt="${vehicle.car_name}" class="w-full h-48 object-cover" onerror="this.src='https://placehold.co/400x250/${bgColor.replace('#', '')}/ffffff?text=${encodeURIComponent(vehicle.car_name)}'">
+                    <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-1 text-xs font-medium ${statusClass}">
+                        <i class="fas fa-${statusIcon} mr-1"></i>
+                        ${statusText}
                     </div>
                 </div>
                 <div class="p-6">
@@ -213,14 +311,21 @@ function renderVehicles() {
                     <div class="pricing mb-4">
                         <div class="flex justify-between items-center">
                             <div>
-                                <div class="text-2xl font-bold text-gray-900">₱${dailyRate.toLocaleString()}/day</div>
-                                <div class="text-sm text-gray-500">₱${hourlyRate}/hour</div>
+                                <div class="text-2xl font-bold text-gray-900">₱${Math.round(dailyRate).toLocaleString()}/day</div>
+                                <div class="text-sm text-gray-500">₱${Math.round(hourlyRate).toLocaleString()}/hour</div>
                             </div>
                             <div class="text-right">
                                 <div class="text-xs text-gray-400">Plate:</div>
                                 <div class="text-sm font-mono font-semibold text-gray-600">${vehicle.plate_number}</div>
                             </div>
                         </div>
+                        
+                        ${(rate6h > 0 || rate8h > 0 || rate12h > 0) ? `
+                        <div class="mt-2 text-xs text-gray-500">
+                            ${rate8h > 0 ? `8hrs: ₱${rate8h.toLocaleString()}` : ''}
+                            ${rate12h > 0 ? `${rate8h > 0 ? ' • ' : ''}12hrs: ₱${rate12h.toLocaleString()}` : ''}
+                        </div>
+                        ` : ''}
                     </div>
                     
                     <button 
@@ -228,7 +333,7 @@ function renderVehicles() {
                         data-vehicle="${vehicle.car_name}"
                         onclick="${isAvailable ? `openBookingModalWithVehicle('${vehicle.car_name}')` : 'showUnavailableMessage()'}"
                         ${!isAvailable ? 'disabled' : ''}>
-                        ${isAvailable ? 'Book Now' : 'Currently Unavailable'}
+                        ${isAvailable ? 'Book Now' : statusText}
                     </button>
                 </div>
             </div>
@@ -343,7 +448,6 @@ function openBookingModalWithVehicle(vehicleName) {
         return;
     }
     
-    
     document.getElementById('selected-vehicle').value = vehicleName;
     openBookingModal();
     setTimeout(calculateRentalCost, 100);
@@ -397,46 +501,172 @@ function calculateRentalCost() {
     const endDate = document.getElementById('end-date').value;
     const startTime = document.getElementById('start-time').value;
     const endTime = document.getElementById('end-time').value;
+    const pickupLocation = document.getElementById('pickup-location-modal').value;
+    const returnLocation = document.getElementById('return-location-modal').value;
 
-    if (!selectedVehicle || !startDate || !endDate || !startTime || !endTime) {
+    console.log('Calculating cost for:', {
+        selectedVehicle, startDate, endDate, startTime, endTime, 
+        pickupLocation, returnLocation: returnLocation || 'same as pickup'
+    });
+
+    if (!selectedVehicle || !startDate || !endDate || !startTime || !endTime || !pickupLocation) {
         document.getElementById('cost-summary').classList.add('hidden');
         return;
     }
 
-    const vehicle = vehiclePricing[selectedVehicle];
-    if (!vehicle) {
+    // Find the vehicle data
+    const vehicleData = vehiclesData.find(v => v.car_name === selectedVehicle);
+    if (!vehicleData) {
+        console.error('Vehicle data not found for:', selectedVehicle);
         document.getElementById('cost-summary').classList.add('hidden');
         return;
     }
 
-    const startDateTime = new Date(`${startDate} ${startTime}`);
-    const endDateTime = new Date(`${endDate} ${endTime}`);
+    // Parse dates and times
+    const startDateTime = new Date(`${startDate}T${startTime}`);
+    const endDateTime = new Date(`${endDate}T${endTime}`);
+    
+    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        console.error('Invalid date/time values');
+        document.getElementById('cost-summary').classList.add('hidden');
+        return;
+    }
+
     const diffMs = endDateTime - startDateTime;
-    const totalHours = Math.max(diffMs / (1000 * 60 * 60), 8);
+    const totalHours = Math.max(diffMs / (1000 * 60 * 60), 8); // Minimum 8 hours
 
     if (totalHours <= 0) {
+        console.error('Invalid duration:', totalHours);
         document.getElementById('cost-summary').classList.add('hidden');
         return;
     }
 
-    let totalCost;
+    // FIXED: Calculate location charges with proper return location handling
+    // If return location is empty, treat it as same as pickup (no extra charge)
+    const effectiveReturnLocation = returnLocation || pickupLocation;
+    const locationCharges = calculateLocationCharges(pickupLocation, effectiveReturnLocation);
+    
+    console.log('Location charges calculated:', {
+        pickup: pickupLocation,
+        return: effectiveReturnLocation,
+        charges: locationCharges
+    });
+
+    // Get available rates
+    const rate6h = parseFloat(vehicleData.rate_6h) || 0;
+    const rate8h = parseFloat(vehicleData.rate_8h) || 0;
+    const rate12h = parseFloat(vehicleData.rate_12h) || 0;
+    const rate24h = parseFloat(vehicleData.rate_24h) || parseFloat(vehicleData.rate_per_day) || 0;
+    const dailyRate = parseFloat(vehicleData.rate_per_day) || rate24h || 2000;
+    const hourlyRate = parseFloat(vehicleData.hourly_rate) || (rate8h / 8) || 250;
+
+    let vehicleCost;
     let rateText;
 
-    if (totalHours >= 24) {
+    // Choose the best rate based on duration
+    if (totalHours >= 24 && rate24h > 0) {
         const days = Math.ceil(totalHours / 24);
-        totalCost = vehicle.dailyRate * days;
-        rateText = `₱${vehicle.dailyRate.toLocaleString()}/day × ${days} day${days > 1 ? 's' : ''}`;
+        vehicleCost = rate24h * days;
+        rateText = `₱${rate24h.toLocaleString()}/24hrs × ${days} day${days > 1 ? 's' : ''}`;
+    } else if (totalHours >= 12 && totalHours < 24 && rate12h > 0) {
+        vehicleCost = rate12h;
+        rateText = `₱${rate12h.toLocaleString()}/12hrs`;
+    } else if (totalHours >= 8 && totalHours < 12 && rate8h > 0) {
+        vehicleCost = rate8h;
+        rateText = `₱${rate8h.toLocaleString()}/8hrs`;
+    } else if (totalHours >= 6 && totalHours < 8 && rate6h > 0) {
+        vehicleCost = rate6h;
+        rateText = `₱${rate6h.toLocaleString()}/6hrs`;
     } else {
-        totalCost = vehicle.hourlyRate * totalHours;
-        rateText = `₱${vehicle.hourlyRate}/hour × ${Math.ceil(totalHours)} hours`;
+        // Fall back to hourly or daily calculation
+        if (totalHours >= 24) {
+            const days = Math.ceil(totalHours / 24);
+            vehicleCost = dailyRate * days;
+            rateText = `₱${dailyRate.toLocaleString()}/day × ${days} day${days > 1 ? 's' : ''}`;
+        } else {
+            vehicleCost = hourlyRate * Math.ceil(totalHours);
+            rateText = `₱${hourlyRate.toLocaleString()}/hour × ${Math.ceil(totalHours)} hours`;
+        }
     }
 
+    // Calculate total cost including location charges
+    const totalCost = vehicleCost + locationCharges.totalLocationCharge;
+
+    console.log('Cost breakdown:', {
+        vehicleCost,
+        locationCharges: locationCharges.totalLocationCharge,
+        totalCost
+    });
+
+    // Update UI with detailed breakdown
     document.getElementById('summary-vehicle').textContent = selectedVehicle;
     document.getElementById('summary-duration').textContent = `${Math.ceil(totalHours)} hours`;
     document.getElementById('summary-rate').textContent = rateText;
-    document.getElementById('summary-total').textContent = `₱${totalCost.toLocaleString()}`;
+    
+    // FIXED: Update the cost breakdown section with proper return location display
+    const costBreakdownHtml = `
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span>Vehicle Rental:</span>
+                <span class="font-semibold">₱${Math.round(vehicleCost).toLocaleString()}</span>
+            </div>
+            ${locationCharges.pickupCharge > 0 ? `
+            <div class="flex justify-between text-sm">
+                <span>Pickup (${getLocationDisplayName(pickupLocation)}):</span>
+                <span>₱${locationCharges.pickupCharge.toLocaleString()}</span>
+            </div>
+            ` : ''}
+            ${locationCharges.returnCharge > 0 ? `
+            <div class="flex justify-between text-sm">
+                <span>Return (${getLocationDisplayName(effectiveReturnLocation)}):</span>
+                <span>₱${locationCharges.returnCharge.toLocaleString()}</span>
+            </div>
+            ` : ''}
+            ${locationCharges.totalLocationCharge === 0 ? `
+            <div class="flex justify-between text-sm text-green-600">
+                <span>Location Charges:</span>
+                <span>FREE ${!returnLocation ? '(Same pickup/return location)' : ''}</span>
+            </div>
+            ` : ''}
+            <div class="border-t pt-2 flex justify-between font-bold text-lg">
+                <span>Total:</span>
+                <span class="text-green-600">₱${Math.round(totalCost).toLocaleString()}</span>
+            </div>
+        </div>
+    `;
+    
+    // Update the cost summary section
+    const costSummaryElement = document.getElementById('cost-summary');
+    const summaryGrid = costSummaryElement.querySelector('.bg-white.p-4');
+    
+    if (summaryGrid) {
+        summaryGrid.innerHTML = `
+            <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                <div class="font-medium">Selected Vehicle:</div>
+                <div class="text-blue-600 font-semibold">${selectedVehicle}</div>
+                
+                <div class="font-medium">Rental Duration:</div>
+                <div class="text-blue-600 font-semibold">${Math.ceil(totalHours)} hours</div>
+                
+                <div class="font-medium">Rate:</div>
+                <div class="text-blue-600 font-semibold">${rateText}</div>
+                
+                <div class="font-medium">Pickup Location:</div>
+                <div class="text-blue-600 font-semibold">${getLocationDisplayName(pickupLocation)}</div>
+                
+                <div class="font-medium">Return Location:</div>
+                <div class="text-blue-600 font-semibold">${returnLocation ? getLocationDisplayName(returnLocation) : 'Same as pickup'}</div>
+            </div>
+            ${costBreakdownHtml}
+        `;
+    }
     
     document.getElementById('cost-summary').classList.remove('hidden');
+    
+    const saveButton = document.getElementById('save-booking-btn');
+    if (saveButton) {
+        saveButton.style.display = 'block';
+    }
 }
 
 function saveBookingModal() {
@@ -657,6 +887,94 @@ function submitBookingToServer(formData) {
     });
 }
 
+// Quick booking form handler
+function handleQuickBookingForm(event) {
+    event.preventDefault();
+    
+    // Get form values
+    const pickupLocation = document.getElementById('pickup-location').value;
+    const pickupDate = document.getElementById('pickup-date').value;
+    const pickupTime = document.getElementById('pickup-time').value;
+    const returnDate = document.getElementById('return-date').value;
+    const returnTime = document.getElementById('return-time').value;
+    const returnLocation = document.getElementById('return-location').value;
+    
+    // Validate dates
+    if (!pickupDate || !returnDate || !pickupTime || !returnTime) {
+        showMessage('Please fill in all date and time fields', 'error');
+        return;
+    }
+    
+    const startDateTime = new Date(`${pickupDate} ${pickupTime}`);
+    const endDateTime = new Date(`${returnDate} ${returnTime}`);
+    const now = new Date();
+    
+    if (startDateTime < now) {
+        showMessage('Pickup date and time cannot be in the past', 'error');
+        return;
+    }
+    
+    if (endDateTime <= startDateTime) {
+        showMessage('Return date and time must be after pickup', 'error');
+        return;
+    }
+    
+    // Calculate duration in hours
+    const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+    if (durationHours < 8) {
+        showMessage('Minimum rental period is 8 hours', 'error');
+        return;
+    }
+    
+    // Store quick booking data - FIXED: handle empty return location properly
+    bookingData.quickBooking = {
+        pickupLocation,
+        pickupDate,
+        pickupTime,
+        returnDate,
+        returnTime,
+        returnLocation: returnLocation || '' // Keep empty if not specified
+    };
+    
+    // Scroll to vehicles section
+    document.getElementById('vehicles').scrollIntoView({ behavior: 'smooth' });
+    
+    // FIXED: Show message about location pricing with proper return location handling
+    const effectiveReturnLocation = returnLocation || pickupLocation;
+    const locationCharges = calculateLocationCharges(pickupLocation, effectiveReturnLocation);
+    
+    if (locationCharges.totalLocationCharge > 0) {
+        let message = `Note: Additional charges will apply - `;
+        if (locationCharges.pickupCharge > 0) {
+            message += `Pickup: ₱${locationCharges.pickupCharge.toLocaleString()}`;
+        }
+        if (locationCharges.returnCharge > 0) {
+            if (locationCharges.pickupCharge > 0) message += ', ';
+            message += `Return: ₱${locationCharges.returnCharge.toLocaleString()}`;
+        }
+        message += ` (Total: ₱${locationCharges.totalLocationCharge.toLocaleString()})`;
+        showMessage(message, 'info');
+    } else if (!returnLocation) {
+        showMessage('Great! No additional location charges since you\'re returning to the same location.', 'info');
+    }
+}
+
+
+function initializeQuickBookingForm() {
+    const quickBookingForm = document.getElementById('quick-booking-form');
+    if (quickBookingForm) {
+        quickBookingForm.addEventListener('submit', handleQuickBookingForm);
+    }
+    
+    // Set minimum dates to today
+    const today = new Date().toISOString().split('T')[0];
+    const pickupDate = document.getElementById('pickup-date');
+    const returnDate = document.getElementById('return-date');
+    
+    if (pickupDate) pickupDate.min = today;
+    if (returnDate) returnDate.min = today;
+}
+
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
@@ -666,6 +984,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loadingElement) {
         loadingElement.style.display = 'block';
     }
+    
+    // Initialize quick booking form
+    initializeQuickBookingForm();
+    
+    // ADDED: Initialize location handling
+    initializeLocationHandling();
     
     // Load vehicles from database
     loadVehicles();
@@ -690,6 +1014,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (validateForm()) {
                 const formData = new FormData(modalForm);
                 
+                // FIXED: Ensure return location is handled properly in form data
+                const returnLocationValue = document.getElementById('return-location-modal').value;
+                if (!returnLocationValue) {
+                    // If return location is empty, set it to pickup location for the backend
+                    const pickupLocationValue = document.getElementById('pickup-location-modal').value;
+                    formData.set('return_location', pickupLocationValue);
+                }
+                
                 // Log form data for debugging
                 console.log('Form data being sent:');
                 for (let [key, value] of formData.entries()) {
@@ -704,32 +1036,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add event listeners for cost calculation
-    ['start-date', 'end-date', 'start-time', 'end-time'].forEach(id => {
+    ['start-date', 'end-date', 'start-time', 'end-time', 'pickup-location-modal', 'return-location-modal'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener('change', calculateRentalCost);
         }
     });
-
-    // Auto-update return location to match pickup if not specified
-    const pickupLocation = document.getElementById('pickup-location-modal');
-    const returnLocation = document.getElementById('return-location-modal');
     
-    if (pickupLocation && returnLocation) {
-        pickupLocation.addEventListener('change', function() {
-            if (!returnLocation.value) {
-                returnLocation.style.backgroundColor = '#f3f4f6';
-                returnLocation.title = 'Return location will be same as pickup location';
+    // Show location pricing info when user changes location
+    const locationSelects = document.querySelectorAll('#pickup-location-modal, #return-location-modal, #pickup-location');
+    locationSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const selectedValue = this.value;
+            const charge = locationPricing[selectedValue] || 0;
+            
+            // Only show info for pickup location and non-empty return location
+            if (charge > 0 && (this.id === 'pickup-location-modal' || (this.id === 'return-location-modal' && selectedValue))) {
+                // Show tooltip or info about additional charge
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'text-xs text-orange-600 mt-1';
+                infoDiv.textContent = `Additional ₱${charge.toLocaleString()} for this location`;
+                
+                // Remove any existing info
+                const existingInfo = this.parentNode.querySelector('.text-orange-600');
+                if (existingInfo) {
+                    existingInfo.remove();
+                }
+                
+                // Add new info
+                this.parentNode.appendChild(infoDiv);
+                
+                // Remove info after 3 seconds
+                setTimeout(() => {
+                    if (infoDiv && infoDiv.parentNode) {
+                        infoDiv.remove();
+                    }
+                }, 3000);
             }
         });
-        
-        returnLocation.addEventListener('change', function() {
-            if (this.value) {
-                this.style.backgroundColor = '';
-                this.title = '';
-            }
-        });
-    }
+    });
 });
 
 // Close modal when clicking outside
@@ -765,154 +1110,3 @@ setInterval(() => {
     console.log('Auto-refreshing vehicle availability...');
     loadVehicles();
 }, 5 * 60 * 1000); // 5 minutes
-function handleQuickBookingForm(event) {
-    event.preventDefault();
-    
-    // Get form values
-    const pickupLocation = document.getElementById('pickup-location').value;
-    const pickupDate = document.getElementById('pickup-date').value;
-    const pickupTime = document.getElementById('pickup-time').value;
-    const returnDate = document.getElementById('return-date').value;
-    const returnTime = document.getElementById('return-time').value;
-    
-    // Validate dates
-   if (!pickupDate || !returnDate || !pickupTime || !returnTime) {
-        showMessage('Please fill in all date and time fields', 'error');
-        return;
-    }
-    
-    const startDateTime = new Date(`${pickupDate} ${pickupTime}`);
-    const endDateTime = new Date(`${returnDate} ${returnTime}`);
-    const now = new Date();
-    
-    if (startDateTime < now) {
-        showMessage('Pickup date and time cannot be in the past', 'error');
-        return;
-    }
-    
-    if (endDateTime <= startDateTime) {
-        showMessage('Return date and time must be after pickup', 'error');
-        return;
-    }
-    
-    // Calculate duration in hours
-    const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
-    if (durationHours < 8) {
-        showMessage('Minimum rental period is 8 hours', 'error');
-        return;
-    }
-    
-    // Store quick booking data
-    bookingData.quickBooking = {
-        pickupLocation,
-        pickupDate,
-        pickupTime,
-        returnDate,
-        returnTime
-    };
-    
-    // Load vehicles with availability for these dates
-    loadVehiclesWithAvailability(pickupDate, returnDate, pickupTime, returnTime);
-}
-
-async function loadVehiclesWithAvailability(pickupDate, returnDate, pickupTime, returnTime) {
-    try {
-        console.log('Loading vehicles with availability check...');
-        const loadingElement = document.getElementById('vehicles-loading');
-        if (loadingElement) {
-            loadingElement.style.display = 'block';
-        }
-        // Construct query parameters
-        const params = new URLSearchParams();
-        params.append('start_datetime', `${pickupDate} ${pickupTime}`);
-        params.append('end_datetime', `${returnDate} ${returnTime}`);
-        
-        const response = await fetch(`get_vehicles.php?${params.toString()}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            vehiclesData = data.data;
-            
-            // Update vehiclePricing
-            vehiclePricing = {};
-            vehiclesData.forEach(vehicle => {
-                vehiclePricing[vehicle.car_name] = {
-                    dailyRate: vehicle.rate_per_day,
-                    hourlyRate: vehicle.hourly_rate
-                };
-            });
-            
-            console.log('Vehicles loaded with availability:', vehiclesData);
-            
-            // Render vehicles in the DOM
-            renderVehicles();
-            
-            // Scroll to vehicles section
-            document.getElementById('vehicles').scrollIntoView({
-                behavior: 'smooth'
-            });
-            
-            return vehiclesData;
-        } else {
-            throw new Error(data.message || 'Failed to load vehicles');
-        }
-    } catch (error) {
-        console.error('Error loading vehicles with availability:', error);
-        showMessage('Unable to check vehicle availability. Please try again.', 'error');
-        return [];
-    }finally {
-        const loadingElement = document.getElementById('vehicles-loading');
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
-    }
-}
-
-
-function initializeQuickBookingForm() {
-    const quickBookingForm = document.getElementById('quick-booking-form');
-    if (quickBookingForm) {
-        quickBookingForm.addEventListener('submit', handleQuickBookingForm);
-    }
-    
-    // Set minimum dates to today
-    const today = new Date().toISOString().split('T')[0];
-    const pickupDate = document.getElementById('pickup-date');
-    const returnDate = document.getElementById('return-date');
-    
-    if (pickupDate) pickupDate.min = today;
-    if (returnDate) returnDate.min = today;
-}
-    function initializeQuickBookingForm() {
-        const quickBookingForm = document.getElementById('quick-booking-form');
-        if (quickBookingForm) {
-            quickBookingForm.addEventListener('submit', handleQuickBookingForm);
-        }
-        
-        // Set minimum dates to today
-        const today = new Date().toISOString().split('T')[0];
-        const pickupDate = document.getElementById('pickup-date');
-        const returnDate = document.getElementById('return-date');
-        
-        if (pickupDate) pickupDate.min = today;
-        if (returnDate) returnDate.min = today;
-    }
-
-// Update your DOMContentLoaded event listener
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, initializing...');
-        
-        // Initialize quick booking form
-        initializeQuickBookingForm();
-        
-        // Load vehicles initially
-        loadVehicles();
-        
-        // Rest of your initialization code...
-        initializeImageUpload();
-        // ...
-    });
