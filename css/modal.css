@@ -1,0 +1,489 @@
+/* FIXED MODAL BASE STYLES - MUCH LARGER */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal.active,
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* FIXED MODAL CONTENT - INCREASED SIZE */
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-height: 95vh;
+    overflow-y: auto;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+.modal.active .modal-content,
+.modal.show .modal-content {
+    transform: scale(1);
+}
+
+/* FIXED MODAL SIZING - MUCH LARGER */
+.modal.car-details-modal .modal-content,
+.modal.booking-modal .modal-content {
+    max-width: 1000px; /* Increased from 900px */
+    min-width: 800px;  /* Added minimum width */
+}
+
+.modal.message-modal .modal-content {
+    max-width: 500px; /* Increased from 400px */
+}
+
+/* IMPROVED CLOSE BUTTON */
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+    font-size: 18px;
+    color: #666;
+}
+
+.modal-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: #333;
+    transform: scale(1.1);
+}
+
+/* IMPROVED MODAL HEADER */
+.modal-header {
+    padding: 30px 70px 30px 30px; /* Extra padding-right for close button */
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-title {
+    font-size: 2.5rem; /* Increased from 1.5em */
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+/* IMPROVED MODAL BODY */
+.modal-body {
+    padding: 30px; /* Increased from 20px */
+}
+
+/* IMPROVED FORM SECTIONS */
+.form-section {
+    margin-bottom: 3rem; /* Increased from 2rem */
+    padding: 2rem;      /* Increased from 1.5rem */
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fafbfc;
+}
+
+.form-section h3 {
+    font-size: 1.5rem;  /* Increased from 1.25rem */
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1.5rem; /* Increased from 1rem */
+    display: flex;
+    align-items: center;
+}
+
+.form-section h3 i {
+    margin-right: 12px; /* Increased from 8px */
+    color: #667eea;
+    font-size: 1.3rem;
+}
+
+/* IMPROVED FORM INPUTS - MUCH LARGER */
+.form-input {
+    width: 100%;
+    padding: 16px 20px; /* Increased from 12px */
+    border: 2px solid #e5e7eb;
+    border-radius: 10px; /* Increased from 8px */
+    font-size: 1.1rem;  /* Increased from 1rem */
+    transition: all 0.2s;
+    box-sizing: border-box;
+    min-height: 56px;   /* Added minimum height */
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-input.error-field {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+/* IMPROVED FORM LABELS */
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px; /* Increased from 5px */
+    font-size: 1rem;   /* Increased from 0.9em */
+}
+
+/* IMPROVED GRID LAYOUTS */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Increased from 1fr 1fr */
+    gap: 24px; /* Increased from 15px */
+    margin-bottom: 24px; /* Increased from 20px */
+}
+
+/* IMPROVED COST SUMMARY */
+.cost-summary {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 2px solid #0ea5e9;
+    border-radius: 12px;
+    padding: 24px; /* Increased from 15px */
+    margin: 24px 0; /* Increased from 20px 0 */
+}
+
+.cost-summary h3 {
+    font-weight: 600;
+    color: #0c4a6e;
+    margin-bottom: 20px; /* Increased from 12px */
+    font-size: 1.4rem;   /* Increased from 1em */
+}
+
+/* IMPROVED BUTTONS - MUCH LARGER */
+.btn {
+    padding: 16px 32px; /* Increased from 12px 24px */
+    border: none;
+    border-radius: 10px; /* Increased from 8px */
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.1rem;  /* Increased from 0.95em */
+    min-height: 56px;   /* Added minimum height */
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a4190);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: white;
+    color: #374151;
+    border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
+}
+
+.btn i {
+    margin-right: 8px; /* Increased from 6px */
+    font-size: 1rem;
+}
+
+/* IMPROVED IMAGE UPLOAD */
+.image-upload-container {
+    border: 3px dashed #d1d5db; /* Increased from 2px */
+    border-radius: 12px; /* Increased from 8px */
+    padding: 60px 30px; /* Increased from 40px 20px */
+    text-align: center;
+    transition: border-color 0.2s;
+    cursor: pointer;
+    position: relative;
+    background: white;
+}
+
+.image-upload-container:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.image-upload-content i {
+    font-size: 4rem; /* Increased from 3rem */
+    color: #9ca3af;
+    margin-bottom: 1.5rem; /* Increased from 1rem */
+}
+
+.image-upload-content p:first-of-type {
+    font-size: 1.2rem; /* Increased font size */
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.image-upload-content p:last-of-type {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+/* IMPROVED IMAGE PREVIEW */
+.image-preview {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px; /* Increased from 8px */
+    padding: 30px; /* Increased from 20px */
+    text-align: center;
+}
+
+.image-preview img {
+    max-width: 400px; /* Increased from 200px */
+    max-height: 300px; /* Increased from 200px */
+    border-radius: 12px; /* Increased from 8px */
+    margin-bottom: 20px; /* Increased from 15px */
+}
+
+/* IMPROVED MESSAGE MODAL */
+.message-content {
+    text-align: center;
+    padding: 40px; /* Increased from 20px */
+}
+
+.message-content i {
+    font-size: 4rem; /* Increased from 3rem */
+    margin-bottom: 20px; /* Increased from 16px */
+}
+
+.message-content h3 {
+    font-size: 1.5rem; /* Increased from 1.25rem */
+    font-weight: 600;
+    margin-bottom: 12px; /* Increased from 8px */
+}
+
+/* RESPONSIVE DESIGN - IMPROVED */
+@media (max-width: 1200px) {
+    .modal.booking-modal .modal-content {
+        max-width: 1000px;
+        min-width: 700px;
+    }
+}
+
+@media (max-width: 968px) {
+    .modal.booking-modal .modal-content {
+        max-width: 95%;
+        min-width: 0;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .modal-title {
+        font-size: 2rem;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal {
+        padding: 15px;
+    }
+    
+    .modal-content {
+        max-height: 98vh;
+    }
+    
+    .modal-header {
+        padding: 25px 60px 25px 25px;
+    }
+    
+    .modal-body {
+        padding: 25px;
+    }
+    
+    .form-section {
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    
+    .form-section h3 {
+        font-size: 1.3rem;
+    }
+    
+    .form-input {
+        padding: 14px 16px;
+        font-size: 1rem;
+        min-height: 50px;
+    }
+    
+    .btn {
+        padding: 14px 28px;
+        font-size: 1rem;
+        min-height: 50px;
+    }
+    
+    .image-upload-container {
+        padding: 40px 20px;
+    }
+    
+    .image-preview img {
+        max-width: 250px;
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 640px) {
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-header {
+        padding: 20px 50px 20px 20px;
+    }
+    
+    .modal-title {
+        font-size: 1.75rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .form-input {
+        padding: 12px 14px;
+        min-height: 48px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        min-height: 48px;
+    }
+}
+
+/* UTILITY CLASSES */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mb-4 {
+    margin-bottom: 16px;
+}
+
+.space-y-2 > * + * {
+    margin-top: 8px;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.font-mono {
+    font-family: ui-monospace, monospace;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.text-blue-600 {
+    color: #2563eb;
+}
+
+.text-green-600 {
+    color: #059669;
+}
+
+.text-red-600 {
+    color: #dc2626;
+}
+
+.text-gray-500 {
+    color: #6b7280;
+}
+
+.text-gray-800 {
+    color: #1f2937;
+}
+
+.text-blue-800 {
+    color: #1e40af;
+}
+
+.bg-blue-50 {
+    background-color: #eff6ff;
+}
+
+.rounded-lg {
+    border-radius: 8px;
+}
+
+.p-3 {
+    padding: 12px;
+}
+
+.p-8 {
+    padding: 32px;
+}
+
+/* Additional spacing utilities */
+.space-y-8 > * + * {
+    margin-top: 32px;
+}
+
+.gap-6 {
+    gap: 24px;
+}
+
+.pt-8 {
+    padding-top: 32px;
+}
+
+.mb-6 {
+    margin-bottom: 24px;
+}
+
+.mr-3 {
+    margin-right: 12px;
+}

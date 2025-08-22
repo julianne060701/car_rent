@@ -1,0 +1,182 @@
+  /* Fixed car image styling */
+  .car-image-container {
+    width: 100%;
+    height: 200px; /* Fixed height for all car images */
+    overflow: hidden;
+    position: relative;
+}
+
+.car-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures image covers the container while maintaining aspect ratio */
+    object-position: center; /* Centers the image */
+    transition: transform 0.3s ease;
+}
+
+.car-image:hover {
+    transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    .car-image-container {
+        height: 240px; /* Slightly taller on medium screens */
+    }
+}
+
+@media (min-width: 1024px) {
+    .car-image-container {
+        height: 220px; /* Consistent height on large screens */
+    }
+}
+
+/* Vehicle card layout improvements */
+.vehicle-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensures all cards have same height */
+}
+
+@media (min-width: 768px) {
+    .vehicle-card {
+        flex-direction: row;
+    }
+    
+    .car-image-container {
+        width: 40%;
+        flex-shrink: 0;
+    }
+    
+    .card-content {
+        width: 60%;
+        flex: 1;
+    }
+}
+
+/* Unavailable overlay adjustments */
+.unavailable-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.unavailable-badge {
+    background: #ef4444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Car status styling */
+.car-status-available {
+    background-color: #10b981;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.car-status-booked {
+    background-color: #f59e0b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.car-status-maintenance {
+    background-color: #ef4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Modal styling */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.7);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+/* Pagination styling */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 2rem;
+}
+
+.pagination a, .pagination span {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.pagination a:hover {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.pagination .current {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.pagination .disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.pagination .disabled:hover {
+    background-color: transparent;
+    border-color: #e5e7eb;
+}
