@@ -11,7 +11,6 @@ let vehiclePricing = {};
 
 // Vehicle type mappings for features and descriptions
 
-
 // Function to get vehicle configuration
 function getVehicleConfig(carName) {
     // Try to match with existing configurations
@@ -91,7 +90,7 @@ async function loadVehicles() {
 // Function to render vehicles in the DOM
 // Function to render vehicles in the DOM
 function renderVehicles() {
-    const vehiclesContainer = document.querySelector('#vehicles .grid');
+    const vehiclesContainer = document.querySelector('#vehicles-grid');
     const loadingElement = document.getElementById('vehicles-loading');
 
     // Hide loading spinner
@@ -304,6 +303,7 @@ function openBookingModalWithVehicle(vehicleName) {
         showUnavailableMessage();
         return;
     }
+    
     
     document.getElementById('selected-vehicle').value = vehicleName;
     openBookingModal();
@@ -726,3 +726,154 @@ setInterval(() => {
     console.log('Auto-refreshing vehicle availability...');
     loadVehicles();
 }, 5 * 60 * 1000); // 5 minutes
+function handleQuickBookingForm(event) {
+    event.preventDefault();
+    
+    // Get form values
+    const pickupLocation = document.getElementById('pickup-location').value;
+    const pickupDate = document.getElementById('pickup-date').value;
+    const pickupTime = document.getElementById('pickup-time').value;
+    const returnDate = document.getElementById('return-date').value;
+    const returnTime = document.getElementById('return-time').value;
+    
+    // Validate dates
+   if (!pickupDate || !returnDate || !pickupTime || !returnTime) {
+        showMessage('Please fill in all date and time fields', 'error');
+        return;
+    }
+    
+    const startDateTime = new Date(`${pickupDate} ${pickupTime}`);
+    const endDateTime = new Date(`${returnDate} ${returnTime}`);
+    const now = new Date();
+    
+    if (startDateTime < now) {
+        showMessage('Pickup date and time cannot be in the past', 'error');
+        return;
+    }
+    
+    if (endDateTime <= startDateTime) {
+        showMessage('Return date and time must be after pickup', 'error');
+        return;
+    }
+    
+    // Calculate duration in hours
+    const durationHours = (endDateTime - startDateTime) / (1000 * 60 * 60);
+    if (durationHours < 8) {
+        showMessage('Minimum rental period is 8 hours', 'error');
+        return;
+    }
+    
+    // Store quick booking data
+    bookingData.quickBooking = {
+        pickupLocation,
+        pickupDate,
+        pickupTime,
+        returnDate,
+        returnTime
+    };
+    
+    // Load vehicles with availability for these dates
+    loadVehiclesWithAvailability(pickupDate, returnDate, pickupTime, returnTime);
+}
+
+async function loadVehiclesWithAvailability(pickupDate, returnDate, pickupTime, returnTime) {
+    try {
+        console.log('Loading vehicles with availability check...');
+        const loadingElement = document.getElementById('vehicles-loading');
+        if (loadingElement) {
+            loadingElement.style.display = 'block';
+        }
+        // Construct query parameters
+        const params = new URLSearchParams();
+        params.append('start_datetime', `${pickupDate} ${pickupTime}`);
+        params.append('end_datetime', `${returnDate} ${returnTime}`);
+        
+        const response = await fetch(`get_vehicles.php?${params.toString()}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            vehiclesData = data.data;
+            
+            // Update vehiclePricing
+            vehiclePricing = {};
+            vehiclesData.forEach(vehicle => {
+                vehiclePricing[vehicle.car_name] = {
+                    dailyRate: vehicle.rate_per_day,
+                    hourlyRate: vehicle.hourly_rate
+                };
+            });
+            
+            console.log('Vehicles loaded with availability:', vehiclesData);
+            
+            // Render vehicles in the DOM
+            renderVehicles();
+            
+            // Scroll to vehicles section
+            document.getElementById('vehicles').scrollIntoView({
+                behavior: 'smooth'
+            });
+            
+            return vehiclesData;
+        } else {
+            throw new Error(data.message || 'Failed to load vehicles');
+        }
+    } catch (error) {
+        console.error('Error loading vehicles with availability:', error);
+        showMessage('Unable to check vehicle availability. Please try again.', 'error');
+        return [];
+    }finally {
+        const loadingElement = document.getElementById('vehicles-loading');
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+    }
+}
+
+
+function initializeQuickBookingForm() {
+    const quickBookingForm = document.getElementById('quick-booking-form');
+    if (quickBookingForm) {
+        quickBookingForm.addEventListener('submit', handleQuickBookingForm);
+    }
+    
+    // Set minimum dates to today
+    const today = new Date().toISOString().split('T')[0];
+    const pickupDate = document.getElementById('pickup-date');
+    const returnDate = document.getElementById('return-date');
+    
+    if (pickupDate) pickupDate.min = today;
+    if (returnDate) returnDate.min = today;
+}
+    function initializeQuickBookingForm() {
+        const quickBookingForm = document.getElementById('quick-booking-form');
+        if (quickBookingForm) {
+            quickBookingForm.addEventListener('submit', handleQuickBookingForm);
+        }
+        
+        // Set minimum dates to today
+        const today = new Date().toISOString().split('T')[0];
+        const pickupDate = document.getElementById('pickup-date');
+        const returnDate = document.getElementById('return-date');
+        
+        if (pickupDate) pickupDate.min = today;
+        if (returnDate) returnDate.min = today;
+    }
+
+// Update your DOMContentLoaded event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing...');
+        
+        // Initialize quick booking form
+        initializeQuickBookingForm();
+        
+        // Load vehicles initially
+        loadVehicles();
+        
+        // Rest of your initialization code...
+        initializeImageUpload();
+        // ...
+    });

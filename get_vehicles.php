@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Methods: GET, POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 try {
@@ -15,8 +15,14 @@ try {
         throw new Exception("Database connection failed: " . $conn->connect_error);
     }
 
+<<<<<<< HEAD
     // Get current date and time
     $current_datetime = date('Y-m-d H:i:s');
+=======
+    // Get parameters from request
+    $start_datetime = isset($_REQUEST['start_datetime']) ? $_REQUEST['start_datetime'] : date('Y-m-d H:i:s');
+    $end_datetime = isset($_REQUEST['end_datetime']) ? $_REQUEST['end_datetime'] : date('Y-m-d H:i:s', strtotime('+1 day'));
+>>>>>>> e6161a9a20f7fdc42683062da3622c5667fe6f1b
 
     // First, update car status based on active bookings
     $update_status_sql = "
@@ -24,7 +30,7 @@ try {
         SET c.status = CASE 
             WHEN EXISTS (
                 SELECT 1 FROM bookings b 
-                WHERE b.vehicle_id = c.car_id 
+                WHERE b.car_id = c.car_id 
                 AND b.status IN ('pending', 'confirmed', 'active')
                 AND CONCAT(b.start_date, ' ', b.start_time) <= ?
                 AND CONCAT(b.end_date, ' ', b.end_time) >= ?
@@ -37,13 +43,19 @@ try {
     if (!$stmt_update) {
         throw new Exception("Failed to prepare status update query: " . $conn->error);
     }
+<<<<<<< HEAD
 
     $stmt_update->bind_param("ss", $current_datetime, $current_datetime);
+=======
+    
+    $stmt_update->bind_param("ss", $end_datetime, $start_datetime);
+>>>>>>> e6161a9a20f7fdc42683062da3622c5667fe6f1b
     $stmt_update->execute();
     $stmt_update->close();
 
     // Now fetch all vehicles with their current availability
     $sql = "
+<<<<<<< HEAD
         SELECT 
             c.car_id,
             c.car_name,
@@ -73,12 +85,47 @@ try {
         ORDER BY c.car_name ASC
     ";
 
+=======
+    SELECT 
+        c.car_id,
+        c.car_name,
+        c.brand,
+        c.plate_number,
+        c.rate_per_day,
+        c.hourly_rate,
+        c.status,
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 FROM bookings b 
+                WHERE b.car_id = c.car_id 
+                AND b.status IN ('pending', 'confirmed', 'active')
+                AND CONCAT(b.start_date, ' ', b.start_time) <= ?
+                AND CONCAT(b.end_date, ' ', b.end_time) >= ?
+            ) THEN 0
+            ELSE 1
+        END as is_available,
+        (
+            SELECT COUNT(*) FROM bookings b 
+            WHERE b.car_id = c.car_id 
+            AND b.status IN ('pending', 'confirmed', 'active')
+        ) as active_bookings
+    FROM cars c 
+    WHERE c.car_id IS NOT NULL
+    ORDER BY c.car_name ASC
+";
+    
+>>>>>>> e6161a9a20f7fdc42683062da3622c5667fe6f1b
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         throw new Exception("Failed to prepare vehicles query: " . $conn->error);
     }
+<<<<<<< HEAD
 
     $stmt->bind_param("ss", $current_datetime, $current_datetime);
+=======
+    
+    $stmt->bind_param("ss", $end_datetime, $start_datetime);
+>>>>>>> e6161a9a20f7fdc42683062da3622c5667fe6f1b
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -103,7 +150,11 @@ try {
         'data' => $vehicles,
         'message' => 'Vehicles loaded successfully',
         'count' => count($vehicles),
-        'timestamp' => $current_datetime
+        'timestamp' => date('Y-m-d H:i:s'),
+        'search_params' => [
+            'start_datetime' => $start_datetime,
+            'end_datetime' => $end_datetime
+        ]
     ]);
 
 } catch (Exception $e) {
