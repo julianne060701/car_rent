@@ -10,6 +10,49 @@ let vehiclesData = [];
 let vehiclePricing = {};
 
 // Vehicle type mappings for features and descriptions
+const vehicleTypeConfig = {
+    'Vios': {
+        passengers: 4,
+        transmission: 'Automatic',
+        feature3: 'Fuel Efficient',
+        description: 'Perfect for city driving and business trips',
+        color: 'blue',
+        iconFeature3: 'gas-pump' 
+    },
+    'Innova': {
+        passengers: 7,
+        transmission: 'Manual',
+        feature3: 'Large Cargo',
+        description: 'Spacious family vehicle for group travels',
+        color: 'yellow',
+        iconFeature3: 'suitcase'
+    },
+    'City': {
+        passengers: 4,
+        transmission: 'CVT',
+        feature3: 'Eco-Friendly',
+        description: 'Reliable and fuel efficient sedan',
+        color: 'blue',
+        iconFeature3: 'leaf'
+    },
+    'Xpander': {
+        passengers: 7,
+        transmission: 'Automatic',
+        feature3: 'Safety Features',
+        description: 'Modern MPV with stylish design',
+        color: 'yellow',
+        iconFeature3: 'shield-alt'
+    },
+    // Default configuration for unknown vehicle types
+    'default': {
+        passengers: 4,
+        transmission: 'Automatic',
+        feature3: 'Modern Features',
+        description: 'Quality vehicle for your travel needs',
+        color: 'blue',
+        iconFeature3: 'car'
+    }
+};
 
 // Function to get vehicle configuration
 function getVehicleConfig(carName) {
@@ -92,8 +135,8 @@ async function loadVehicles() {
 function renderVehicles() {
     const vehiclesContainer = document.querySelector('#vehicles-grid');
     const loadingElement = document.getElementById('vehicles-loading');
-
-    // Hide loading spinner
+    
+    // Hide loading spinner in all cases
     if (loadingElement) {
         loadingElement.style.display = 'none';
     }
@@ -118,8 +161,8 @@ function renderVehicles() {
     console.log('Rendering vehicles...');
 
     let vehiclesHtml = '';
-
-    vehiclesData.forEach((vehicle) => {
+    
+   vehiclesData.forEach((vehicle) => {
         const config = getVehicleConfig(vehicle.car_name);
         const colorClass = config.color === 'yellow' ? 'yellow' : 'blue';
         const bgColor = colorClass === 'yellow' ? '#f59e0b' : '#3b82f6';
