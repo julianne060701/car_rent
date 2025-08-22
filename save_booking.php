@@ -1,5 +1,5 @@
 <?php
-// FIXED save_booking.php with comprehensive error handling and debugging
+// FIXED save_booking.php with correct table column mapping
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
@@ -94,7 +94,7 @@ try {
         return $data;
     }
 
-    // FIXED: Sanitize all inputs with better null handling
+    // Sanitize all inputs with better null handling
     $customer_name = sanitize_input($_POST['customer_name'] ?? '');
     $customer_phone = sanitize_input($_POST['customer_phone'] ?? '');
     $customer_email = sanitize_input($_POST['customer_email'] ?? '');
@@ -118,7 +118,7 @@ try {
     error_log("Locations: pickup=$pickup_location, return=$return_location");
 
     // Handle file upload
-    $uploaded_file_path = null;
+    $uploaded_document = null;
     if (isset($_FILES['upload_image']) && $_FILES['upload_image']['error'] === UPLOAD_ERR_OK) {
         $upload_dir = 'uploads/';
         if (!is_dir($upload_dir)) {
@@ -127,17 +127,17 @@ try {
 
         $file_extension = pathinfo($_FILES['upload_image']['name'], PATHINFO_EXTENSION);
         $new_filename = uniqid() . '.' . $file_extension;
-        $uploaded_file_path = $upload_dir . $new_filename;
+        $uploaded_document = $upload_dir . $new_filename;
 
-        if (!move_uploaded_file($_FILES['upload_image']['tmp_name'], $uploaded_file_path)) {
-            $uploaded_file_path = null;
+        if (!move_uploaded_file($_FILES['upload_image']['tmp_name'], $uploaded_document)) {
+            $uploaded_document = null;
             error_log("Failed to move uploaded file");
         } else {
-            error_log("File uploaded successfully: $uploaded_file_path");
+            error_log("File uploaded successfully: $uploaded_document");
         }
     }
 
-    // FIXED: Validate required fields with better error messages
+    // Validate required fields
     $missing_fields = [];
     if (empty($customer_name)) $missing_fields[] = 'Full Name';
     if (empty($customer_phone)) $missing_fields[] = 'Phone Number';
@@ -178,7 +178,7 @@ try {
     $booking_reference = "BK" . $year . str_pad($new_number, 4, '0', STR_PAD_LEFT);
     error_log("Generated booking reference: $booking_reference");
 
-    // FIXED: Get vehicle data with better error handling
+    // Get vehicle data
     $sql_cars = "SELECT car_id, car_name, rate_per_day, hourly_rate, rate_6h, rate_8h, rate_12h, rate_24h, status FROM cars WHERE car_name = ? LIMIT 1";
     $stmt_cars = $conn->prepare($sql_cars);
     if (!$stmt_cars) {
@@ -213,13 +213,13 @@ try {
 
     error_log("Vehicle data found - ID: $car_id, Rates: daily=$rate_per_day, hourly=$hourly_rate, 24h=$rate_24h");
 
-    // FIXED: Check for overlapping bookings with better query
+    // Check for overlapping bookings
     $sql_check_overlap = "SELECT booking_id, booking_reference FROM bookings 
                           WHERE car_id = ? 
-                          AND status IN ('pending', 'confirmed', 'active')
+                          AND status IN ('pending', 'confirmed', 'active', 'approved')
                           AND NOT (
-                              CONCAT(end_date, ' ', end_time) <= CONCAT(?, ' ', ?) OR
-                              CONCAT(start_date, ' ', start_time) >= CONCAT(?, ' ', ?)
+                              CONCAT(end_date, ' ', return_time) <= CONCAT(?, ' ', ?) OR
+                              CONCAT(start_date, ' ', pickup_time) >= CONCAT(?, ' ', ?)
                           )";
     $stmt_overlap = $conn->prepare($sql_check_overlap);
     if (!$stmt_overlap) {
@@ -292,7 +292,7 @@ try {
 
     error_log("Calculated hours: $total_hours, Type: $rental_type");
 
-    // FIXED: Calculate vehicle cost with proper rate logic
+    // Calculate vehicle cost
     $billable_hours = max($total_hours, 8);
 
     if ($billable_hours >= 24 && $rate_24h > 0) {
@@ -326,7 +326,7 @@ try {
 
     error_log("Cost breakdown - Vehicle: $vehicle_cost, Location: {$location_charges['totalLocationCharge']}, Total: $total_cost");
 
-    // FIXED: Get or create user with better error handling
+    // Get or create user
     $sql_user = "SELECT user_id FROM users WHERE email = ? LIMIT 1";
     $stmt_user = $conn->prepare($sql_user);
     if (!$stmt_user) {
@@ -375,14 +375,14 @@ try {
     error_log("Transaction started");
 
     try {
-        // FIXED: Insert booking with comprehensive error handling
+        // Insert booking with correct column names matching your table structure
         $sql_insert = "INSERT INTO bookings (
             booking_reference, user_id, car_id, customer_name, customer_phone, 
-            customer_email, license_number, start_date, end_date, start_time, 
-            end_time, pickup_location, return_location, purpose, passengers, 
-            vehicle_cost, location_charges, total_cost, rental_type, rental_duration, 
-            total_hours, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
+            customer_email, license_number, start_date, end_date, pickup_time, 
+            return_time, pickup_location, return_location, purpose, passengers, 
+            total_cost, rental_type, rental_duration_hours, total_hours, 
+            uploaded_document, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())";
 
         $stmt_insert = $conn->prepare($sql_insert);
         if (!$stmt_insert) {
@@ -393,13 +393,12 @@ try {
         $rental_duration_hours = $rental_duration ? (int)$rental_duration : null;
 
         $stmt_insert->bind_param(
-            "siissssssssssidddsidi",
+            "siissssssssssidsdds",
             $booking_reference, $user_id, $car_id, $customer_name,
             $customer_phone, $customer_email, $license_number, $pickup_date, 
             $return_date, $pickup_time, $return_time, $pickup_location, 
-            $final_return_location, $purpose, $passengers, $vehicle_cost,
-            $location_charges['totalLocationCharge'], $total_cost, $rental_type, 
-            $rental_duration_hours, $total_hours
+            $final_return_location, $purpose, $passengers, $total_cost,
+            $rental_type, $rental_duration_hours, $total_hours, $uploaded_document
         );
 
         if (!$stmt_insert->execute()) {
@@ -410,7 +409,7 @@ try {
         $booking_id = $conn->insert_id;
         error_log("Booking inserted with ID: $booking_id");
 
-        // Update vehicle status
+        // Update vehicle status to unavailable
         $sql_update_vehicle = "UPDATE cars SET status = 0 WHERE car_id = ?";
         $stmt_update = $conn->prepare($sql_update_vehicle);
         if (!$stmt_update) {
@@ -429,10 +428,10 @@ try {
         $conn->commit();
         error_log("Transaction committed successfully");
 
-        // FIXED: Prepare comprehensive success response
+        // Prepare success response
         $response_data = [
             'status' => 'success', 
-            'message' => 'Your booking has been successfully submitted!',
+            'message' => 'Your booking has been successfully submitted and is pending approval!',
             'booking_reference' => $booking_reference,
             'booking_id' => $booking_id,
             'vehicle_cost' => number_format($vehicle_cost, 2),
@@ -447,7 +446,8 @@ try {
             'return_time' => $return_time,
             'pickup_location' => $pickup_location,
             'return_location' => $final_return_location,
-            'same_location' => empty($return_location)
+            'same_location' => empty($return_location),
+            'booking_status' => 'pending'
         ];
 
         error_log("Success response prepared: " . json_encode($response_data));

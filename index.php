@@ -24,7 +24,7 @@
             <a href="#" class="text-2xl font-bold text-gray-800">GenSan Car Rentals</a>
             <div class="space-x-4 hidden md:flex">
                 <a href="#home" class="text-gray-600 hover:text-blue-500 transition-colors">Home</a>
-                <a href="#vehicles" class="text-gray-600 hover:text-blue-500 transition-colors">Vehicles</a>
+                <a href="available_car.php" class="text-gray-600 hover:text-blue-500 transition-colors">Vehicles</a>
                 <a href="#services" class="text-gray-600 hover:text-blue-500 transition-colors">Services</a>
                 <a href="#about" class="text-gray-600 hover:text-blue-500 transition-colors">About Us</a>
                 <a href="#contact" class="text-gray-600 hover:text-blue-500 transition-colors">Contact</a>
@@ -48,10 +48,10 @@
         </div>
     </section>
 
-    <section class="quick-booking">
+   <section class="quick-booking">
     <div class="container mx-auto px-4">
         <!-- Main Form -->
-        <form id="quick-booking-form" class="booking-form" action="available_car.php" method="GET">
+        <form id="quick-booking-form" class="booking-form" action="available_car.php" method="GET" onsubmit="return validateForm()">
             
             <div class="form-group">
                 <label for="pickup-location" class="block text-gray-700">Pickup Location</label>
@@ -372,6 +372,73 @@
             }
         };
     </script>
+    <script>
+// Set minimum date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('pickup-date').setAttribute('min', today);
+    document.getElementById('return-date').setAttribute('min', today);
+    
+    // Update return date minimum when pickup date changes
+    document.getElementById('pickup-date').addEventListener('change', function() {
+        const pickupDate = this.value;
+        document.getElementById('return-date').setAttribute('min', pickupDate);
+        
+        // If return date is before pickup date, reset it
+        const returnDate = document.getElementById('return-date').value;
+        if (returnDate && returnDate < pickupDate) {
+            document.getElementById('return-date').value = '';
+        }
+    });
+});
+
+// Form validation function
+function validateForm() {
+    const pickupLocation = document.getElementById('pickup-location').value;
+    const pickupDate = document.getElementById('pickup-date').value;
+    const pickupTime = document.getElementById('pickup-time').value;
+    const returnDate = document.getElementById('return-date').value;
+    const returnTime = document.getElementById('return-time').value;
+    
+    // Check if all required fields are filled
+    if (!pickupLocation || !pickupDate || !pickupTime || !returnDate || !returnTime) {
+        alert('Please fill in all required fields.');
+        return false;
+    }
+    
+    // Check if return date is not before pickup date
+    if (returnDate < pickupDate) {
+        alert('Return date cannot be before pickup date.');
+        return false;
+    }
+    
+    // Check if same day booking has valid time
+    if (pickupDate === returnDate && returnTime <= pickupTime) {
+        alert('Return time must be after pickup time for same-day bookings.');
+        return false;
+    }
+    
+    // If all validations pass, allow form submission
+    return true;
+}
+
+// Alternative: Handle form submission with JavaScript (if needed)
+function handleFormSubmission(event) {
+    event.preventDefault(); // Prevent default form submission
+    
+    if (validateForm()) {
+        const form = document.getElementById('quick-booking-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+        
+        // Redirect to available_car.php with parameters
+        window.location.href = 'available_car.php?' + params.toString();
+    }
+}
+
+// Uncomment the line below if you want to handle submission with JavaScript instead
+// document.getElementById('quick-booking-form').addEventListener('submit', handleFormSubmission);
+</script>
 </body>
     
-</html> 
+</html>

@@ -906,17 +906,22 @@ function initializeQuickBookingForm() {
         if (returnDate) returnDate.min = today;
     }
 
-// Update your DOMContentLoaded event listener
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, initializing...');
+document.addEventListener('DOMContentLoaded', function() {
+    const bookingForm = document.getElementById('quick-booking-form');
+    
+    bookingForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
         
-        // Initialize quick booking form
-        initializeQuickBookingForm();
+        // Validate dates
+        const pickupDate = document.getElementById('pickup-date').value;
+        const returnDate = document.getElementById('return-date').value;
         
-        // Load vehicles initially
-        loadVehicles();
+        if (!pickupDate || !returnDate) {
+            alert('Please select both pickup and return dates');
+            return;
+        }
         
-        // Rest of your initialization code...
-        initializeImageUpload();
-        // ...
+        // If validation passes, submit the form
+        this.submit();
     });
+});
