@@ -1,0 +1,79 @@
+[26-Aug-2025 09:15:10 Europe/Berlin] [2025-08-26 09:15:10] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 09:15:10 Europe/Berlin] [2025-08-26 09:15:10] POST data received: {"selected_vehicle":"Priscilla Shannon","customer_name":"Coby Tucker","customer_phone":"+1 (834) 318-1496","customer_email":"rulyvyv@mailinator.com","license_number":"507","start_date":"2025-08-27","end_date":"2025-08-27","start_time":"08:00","end_time":"18:10","pickup_location":"sm-city-gensan","return_location":"kcc-mall"}
+[26-Aug-2025 09:15:10 Europe/Berlin] [2025-08-26 09:15:10] Including database config: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] Database connected successfully
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] Input validation passed
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] Vehicle found: ID 10, Name: Priscilla Shannon
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] Cost calculated: Vehicle=6.00, Location=900, Total=906
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] Generated booking reference: BK20250009
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] FATAL ERROR: Unknown column 'user_id' in 'field list' in C:\xampp\htdocs\car_rent\save_booking.php:205
+[26-Aug-2025 09:15:12 Europe/Berlin] [2025-08-26 09:15:12] ERROR: Unknown column 'user_id' in 'field list'
+[26-Aug-2025 09:28:17 Europe/Berlin] [2025-08-26 09:28:17] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 09:28:17 Europe/Berlin] [2025-08-26 09:28:17] POST data received: {"selected_vehicle":"Tucker Eaton","customer_name":"Mara Emerson","customer_phone":"+1 (318) 425-7999","customer_email":"fujasi@mailinator.com","license_number":"860","start_date":"2025-08-27","end_date":"2025-08-27","start_time":"08:00","end_time":"20:00","pickup_location":"downtown-gensan","return_location":"store"}
+[26-Aug-2025 09:28:17 Europe/Berlin] [2025-08-26 09:28:17] Including database config: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] Database connected successfully
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] Input validation passed
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] Vehicle found: ID 15, Name: Tucker Eaton
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] Cost calculated: Vehicle=91.00, Location=300, Total=391
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] Generated booking reference: BK20250009
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] File uploaded: uploads/68ad62134d2e2.jpg
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] Transaction started
+[26-Aug-2025 09:28:19 Europe/Berlin] [2025-08-26 09:28:19] === BOOKING REQUEST ENDED ===
+[26-Aug-2025 09:28:19 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\car_rent\save_booking.php:246
+Stack trace:
+#0 C:\xampp\htdocs\car_rent\save_booking.php(246): mysqli_stmt->bind_param('isssssssssssids...', 15, 'Mara Emerson', '+1 (318) 425-79...', 'fujasi@mailinat...', '860', 'BK20250009', '2025-08-27', '2025-08-27', '08:00', '20:00', 'downtown-gensan', 'store', '', 1, 391.0, '12h', 12, 'uploads/68ad621...', '08:00', '20:00')
+#1 {main}
+  thrown in C:\xampp\htdocs\car_rent\save_booking.php on line 246
+[26-Aug-2025 10:01:10 Europe/Berlin] [2025-08-26 10:01:10] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:01:10 Europe/Berlin] [2025-08-26 10:01:10] POST data received: {"selected_vehicle":"Tucker Eaton","customer_name":"Aidan Alston","customer_phone":"+1 (156) 226-5307","customer_email":"femyzo@mailinator.com","license_number":"307","start_date":"2025-08-27","end_date":"2025-08-27","start_time":"07:47","end_time":"22:26","pickup_location":"robinsons-place","return_location":"gensan-airport"}
+[26-Aug-2025 10:01:10 Europe/Berlin] [2025-08-26 10:01:10] Including database config: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] Database connected successfully
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] Input validation passed
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] Vehicle found: ID 15, Name: Tucker Eaton
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] Cost calculated: Vehicle=91.00, Location=900, Total=991
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] Generated booking reference: BK20250009
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] File uploaded: uploads/68ad69c82fdae.jpg
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] Transaction started
+[26-Aug-2025 10:01:12 Europe/Berlin] [2025-08-26 10:01:12] === BOOKING REQUEST ENDED ===
+[26-Aug-2025 10:01:12 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\car_rent\save_booking.php:248
+Stack trace:
+#0 C:\xampp\htdocs\car_rent\save_booking.php(248): mysqli_stmt->bind_param('isssssssssssids...', 15, 'Aidan Alston', '+1 (156) 226-53...', 'femyzo@mailinat...', '307', 'BK20250009', '2025-08-27', '2025-08-27', '07:47', '22:26', 'robinsons-place', 'gensan-airport', '', 1, 991.0, '12h', 14.65, 14.65, 'uploads/68ad69c...', '07:47', '22:26')
+#1 {main}
+  thrown in C:\xampp\htdocs\car_rent\save_booking.php on line 248
+[26-Aug-2025 10:01:56 Europe/Berlin] [2025-08-26 10:01:56] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:01:56 Europe/Berlin] [2025-08-26 10:01:56] POST data received: {"selected_vehicle":"Tucker Eaton","customer_name":"Aidan Alston","customer_phone":"+1 (156) 226-5307","customer_email":"femyzo@mailinator.com","license_number":"307","start_date":"2025-08-27","end_date":"2025-08-27","start_time":"07:47","end_time":"22:26","pickup_location":"robinsons-place","return_location":"gensan-airport"}
+[26-Aug-2025 10:01:56 Europe/Berlin] [2025-08-26 10:01:56] Including database config: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] Database connected successfully
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] Input validation passed
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] Vehicle found: ID 15, Name: Tucker Eaton
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] Cost calculated: Vehicle=91.00, Location=900, Total=991
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] Generated booking reference: BK20250009
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] File uploaded: uploads/68ad69f678996.jpg
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] Transaction started
+[26-Aug-2025 10:01:58 Europe/Berlin] [2025-08-26 10:01:58] === BOOKING REQUEST ENDED ===
+[26-Aug-2025 10:01:58 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\car_rent\save_booking.php:248
+Stack trace:
+#0 C:\xampp\htdocs\car_rent\save_booking.php(248): mysqli_stmt->bind_param('isssssssssssids...', 15, 'Aidan Alston', '+1 (156) 226-53...', 'femyzo@mailinat...', '307', 'BK20250009', '2025-08-27', '2025-08-27', '07:47', '22:26', 'robinsons-place', 'gensan-airport', '', 1, 991.0, '12h', 14.65, 14.65, 'uploads/68ad69f...', '07:47', '22:26')
+#1 {main}
+  thrown in C:\xampp\htdocs\car_rent\save_booking.php on line 248
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] Request method: POST
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] Current working directory: C:\xampp\htdocs\car_rent
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] Script path: C:\xampp\htdocs\car_rent\save_booking.php
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] POST data received: {"selected_vehicle":"Tucker Eaton","customer_name":"Inga Morrison","customer_phone":"+1 (288) 297-8315","customer_email":"tugugop@mailinator.com","license_number":"597","start_date":"2025-08-27","end_date":"2025-08-27","start_time":"08:00","end_time":"20:00","pickup_location":"kcc-mall","return_location":"robinsons-place"}
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] FILES data: ["upload_image"]
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] Checking DB path: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:08:17 Europe/Berlin] [2025-08-26 10:08:17] Found DB config at: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] Database connection successful
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] Input validation passed
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] Vehicle found: ID 15, Name: Tucker Eaton
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] Cost calculated: Vehicle=91.00, Location=900, Total=991
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] Generated booking reference: BK20250009
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] File uploaded: uploads/68ad6b7379142.jpg
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] Transaction started
+[26-Aug-2025 10:08:19 Europe/Berlin] [2025-08-26 10:08:19] === BOOKING REQUEST ENDED ===
+[26-Aug-2025 10:08:19 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\car_rent\save_booking.php:308
+Stack trace:
+#0 C:\xampp\htdocs\car_rent\save_booking.php(308): mysqli_stmt->bind_param('isssssssssssids...', 15, 'Inga Morrison', '+1 (288) 297-83...', 'tugugop@mailina...', '597', 'BK20250009', '2025-08-27', '2025-08-27', '08:00', '20:00', 'kcc-mall', 'robinsons-place', '', 1, 991.0, '12h', 12, 12, 'uploads/68ad6b7...', '08:00', '20:00')
+#1 {main}
+  thrown in C:\xampp\htdocs\car_rent\save_booking.php on line 308

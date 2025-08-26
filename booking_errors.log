@@ -1,0 +1,36 @@
+[26-Aug-2025 10:22:10 Europe/Berlin] [2025-08-26 10:22:10] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:22:10 Europe/Berlin] [2025-08-26 10:22:10] Found DB config at: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] Database connection successful
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] Input validation passed
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] Vehicle found: Tucker Eaton (ID: 15)
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] Cost calculation: Vehicle=91.00, Location=700, Total=791
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] File uploaded successfully: uploads/documents/doc_68ad6eb42fa0f.jpg
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] Booking successfully created: ID=14, Reference=BK20250009
+[26-Aug-2025 10:22:12 Europe/Berlin] [2025-08-26 10:22:12] SUCCESS: Booking created
+[26-Aug-2025 10:24:10 Europe/Berlin] [2025-08-26 10:24:10] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:24:10 Europe/Berlin] [2025-08-26 10:24:10] Found DB config at: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] Database connection successful
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] Input validation passed
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] Vehicle found: Toyota Vios 2 (ID: 6)
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] Cost calculation: Vehicle=800.00, Location=700, Total=1500
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] File uploaded successfully: uploads/documents/doc_68ad6f2ccfa71.jpg
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] Booking successfully created: ID=15, Reference=BK20250010
+[26-Aug-2025 10:24:12 Europe/Berlin] [2025-08-26 10:24:12] SUCCESS: Booking created
+[26-Aug-2025 10:34:07 Europe/Berlin] [2025-08-26 10:34:07] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:34:07 Europe/Berlin] [2025-08-26 10:34:07] Found DB config at: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] Database connection successful
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] Input validation passed
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] Vehicle found: Ford Ranger (ID: 7)
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] Cost calculation: Vehicle=800.00, Location=400, Total=1200
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] File uploaded successfully: uploads/documents/doc_68ad718162954.jpg
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] Booking successfully created: ID=16, Reference=BK20250011
+[26-Aug-2025 10:34:09 Europe/Berlin] [2025-08-26 10:34:09] SUCCESS: Booking created
+[26-Aug-2025 10:37:08 Europe/Berlin] [2025-08-26 10:37:08] === BOOKING REQUEST STARTED ===
+[26-Aug-2025 10:37:08 Europe/Berlin] [2025-08-26 10:37:08] Found DB config at: C:\xampp\htdocs\car_rent/config/db.php
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] Database connection successful
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] Input validation passed
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] Vehicle found: Ford Ranger (ID: 7)
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] Cost calculation: Vehicle=800.00, Location=900, Total=1700
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] File uploaded successfully: uploads/documents/doc_68ad7236639ac.jpg
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] Booking successfully created: ID=17, Reference=BK20250012
+[26-Aug-2025 10:37:10 Europe/Berlin] [2025-08-26 10:37:10] SUCCESS: Booking created

@@ -235,7 +235,7 @@
                                 // Fetch bookings - ORDER BY booking_id DESC for newest to oldest based on booking ID
                                 $sql = "SELECT b.*, c.car_name, c.brand 
                                         FROM bookings b 
-                                        LEFT JOIN cars c ON b.vehicle_id = c.car_id 
+                                        LEFT JOIN cars c ON b.car_id = c.car_id 
                                         ORDER BY b.booking_id DESC";
                                 $result = $conn->query($sql);
                                 

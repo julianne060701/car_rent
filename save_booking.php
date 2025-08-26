@@ -1,488 +1,395 @@
 <?php
-// FIXED save_booking.php with correct table column mapping
+// save_booking.php - Complete working version
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-error_log("=== BOOKING SCRIPT STARTED ===");
+ini_set('error_log', __DIR__ . '/booking_errors.log');
 
-// Set headers for JSON response and CORS
-header('Content-Type: application/json');
+// Start output buffering to prevent any accidental output
+ob_start();
+
+// Set JSON headers immediately
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-cache, must-revalidate');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    ob_end_clean();
+    http_response_code(200);
+    exit;
+}
+
+// Function to log debug information
+function logDebug($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message);
+}
+
+// Function to send JSON error response
+function sendError($message, $code = 500) {
+    ob_end_clean(); // Clear any output buffer
+    logDebug("ERROR: $message");
+    http_response_code($code);
+    echo json_encode([
+        'status' => 'error',
+        'message' => $message,
+        'timestamp' => date('Y-m-d H:i:s')
+    ]);
+    exit;
+}
+
+// Function to send JSON success response
+function sendSuccess($data) {
+    ob_end_clean(); // Clear any output buffer
+    logDebug("SUCCESS: Booking created");
+    http_response_code(200);
+    echo json_encode(array_merge([
+        'status' => 'success',
+        'timestamp' => date('Y-m-d H:i:s')
+    ], $data));
+    exit;
+}
+
 try {
-    // Only allow POST requests
-    if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-        http_response_code(405);
-        echo json_encode(['status' => 'error', 'message' => 'Only POST requests are allowed.']);
-        exit;
+    logDebug("=== BOOKING REQUEST STARTED ===");
+    
+    // Check request method
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        sendError('Only POST requests are allowed', 405);
     }
-
-    error_log("POST request received");
-    error_log("POST data: " . json_encode($_POST));
-
-    // Check if the database connection file exists
+    
+    // Database connection
+    $conn = null;
     $db_paths = [
-        'config/db.php',
-        '../config/db.php',
-        'db.php',
-        'config.php'
+        __DIR__ . '/config/db.php',
+        __DIR__ . '/../config/db.php',
+        './config/db.php',
+        '../config/db.php'
     ];
     
-    $db_file = null;
     foreach ($db_paths as $path) {
         if (file_exists($path)) {
-            $db_file = $path;
-            break;
+            logDebug("Found DB config at: $path");
+            try {
+                include_once $path;
+                if (isset($conn) && $conn instanceof mysqli) {
+                    logDebug("Database connection successful");
+                    break;
+                }
+            } catch (Exception $e) {
+                logDebug("Error including DB config: " . $e->getMessage());
+                continue;
+            }
         }
     }
     
-    if (!$db_file) {
-        error_log("Database config file not found. Searched paths: " . implode(', ', $db_paths));
-        throw new Exception("Database configuration file not found. Please ensure db.php exists in one of these locations: " . implode(', ', $db_paths));
-    }
-    
-    error_log("Using database config file: $db_file");
-    require_once $db_file;
-
-    // Check database connection
-    if (!isset($conn)) {
-        throw new Exception("Database connection variable \$conn not found. Check your db.php file.");
+    if (!$conn || !($conn instanceof mysqli)) {
+        sendError("Database connection failed. Please check your database configuration.");
     }
     
     if ($conn->connect_error) {
-        error_log("Database connection failed: " . $conn->connect_error);
-        throw new Exception("Database connection failed: " . $conn->connect_error);
+        sendError("Database connection error: " . $conn->connect_error);
     }
     
-    error_log("Database connection successful");
-
-    // Location pricing configuration (must match JavaScript)
-    $locationPricing = [
-        'store' => 0,
+    // Test database connection
+    $test_query = $conn->query("SELECT 1");
+    if (!$test_query) {
+        sendError("Database connection test failed: " . $conn->error);
+    }
+    
+    // Input sanitization function
+    function clean($data) {
+        global $conn;
+        return mysqli_real_escape_string($conn, htmlspecialchars(trim($data ?? ''), ENT_QUOTES, 'UTF-8'));
+    }
+    
+    // Validate required fields
+    $required_fields = [
+        'customer_name' => 'Full Name',
+        'customer_phone' => 'Phone Number',
+        'customer_email' => 'Email Address',
+        'start_date' => 'Pickup Date',
+        'end_date' => 'Return Date',
+        'start_time' => 'Pickup Time',
+        'end_time' => 'Return Time',
+        'pickup_location' => 'Pickup Location',
+        'selected_vehicle' => 'Selected Vehicle'
+    ];
+    
+    $data = [];
+    $missing_fields = [];
+    
+    foreach ($required_fields as $field => $label) {
+        $value = clean($_POST[$field] ?? '');
+        if (empty($value)) {
+            $missing_fields[] = $label;
+        }
+        $data[$field] = $value;
+    }
+    
+    if (!empty($missing_fields)) {
+        sendError('Missing required fields: ' . implode(', ', $missing_fields), 400);
+    }
+    
+    // Optional fields
+    $data['license_number'] = clean($_POST['license_number'] ?? '');
+    $data['return_location'] = clean($_POST['return_location'] ?? '');
+    $data['purpose'] = clean($_POST['purpose'] ?? '');
+    $data['passengers'] = max(1, (int)($_POST['passengers'] ?? 1));
+    
+    logDebug("Input validation passed");
+    
+    // Validate email format
+    if (!filter_var($data['customer_email'], FILTER_VALIDATE_EMAIL)) {
+        sendError('Invalid email address format', 400);
+    }
+    
+    // Validate phone number (basic check)
+    if (strlen($data['customer_phone']) < 10) {
+        sendError('Phone number must be at least 10 digits', 400);
+    }
+    
+    // Get vehicle information
+    $vehicle_query = "SELECT car_id, car_name, rate_per_day, rate_24h, rate_12h, rate_8h, rate_6h, hourly_rate FROM cars WHERE car_name = ? LIMIT 1";
+    $stmt = $conn->prepare($vehicle_query);
+    
+    if (!$stmt) {
+        sendError("Database query preparation failed: " . $conn->error);
+    }
+    
+    $stmt->bind_param("s", $data['selected_vehicle']);
+    
+    if (!$stmt->execute()) {
+        sendError("Vehicle lookup failed: " . $stmt->error);
+    }
+    
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        sendError("Selected vehicle '{$data['selected_vehicle']}' not found", 404);
+    }
+    
+    $vehicle = $result->fetch_assoc();
+    $stmt->close();
+    
+    logDebug("Vehicle found: {$vehicle['car_name']} (ID: {$vehicle['car_id']})");
+    
+    // Date and time validation
+    $pickup_datetime = new DateTime($data['start_date'] . ' ' . $data['start_time']);
+    $return_datetime = new DateTime($data['end_date'] . ' ' . $data['end_time']);
+    $current_datetime = new DateTime();
+    
+    // Check if pickup is in the past
+    if ($pickup_datetime <= $current_datetime) {
+        sendError('Pickup date and time must be in the future', 400);
+    }
+    
+    // Check if return is after pickup
+    if ($return_datetime <= $pickup_datetime) {
+        sendError('Return date and time must be after pickup date and time', 400);
+    }
+    
+    // Calculate rental duration
+    $duration_seconds = $return_datetime->getTimestamp() - $pickup_datetime->getTimestamp();
+    $duration_hours = $duration_seconds / 3600;
+    
+    // Minimum 8 hours rental
+    if ($duration_hours < 8) {
+        sendError('Minimum rental period is 8 hours', 400);
+    }
+    
+    // Calculate rental cost
+    $vehicle_cost = 0;
+    $rental_type = 'hourly';
+    
+    // Use appropriate rate based on duration
+    if ($duration_hours >= 24 && !empty($vehicle['rate_24h']) && $vehicle['rate_24h'] > 0) {
+        $days = ceil($duration_hours / 24);
+        $vehicle_cost = $vehicle['rate_24h'] * $days;
+        $rental_type = 'daily';
+    } elseif ($duration_hours >= 12 && !empty($vehicle['rate_12h']) && $vehicle['rate_12h'] > 0) {
+        $vehicle_cost = $vehicle['rate_12h'];
+        $rental_type = '12h';
+    } elseif ($duration_hours >= 8 && !empty($vehicle['rate_8h']) && $vehicle['rate_8h'] > 0) {
+        $vehicle_cost = $vehicle['rate_8h'];
+        $rental_type = '8h';
+    } elseif ($duration_hours >= 6 && !empty($vehicle['rate_6h']) && $vehicle['rate_6h'] > 0) {
+        $vehicle_cost = $vehicle['rate_6h'];
+        $rental_type = '6h';
+    } else {
+        // Use hourly rate or default
+        $hourly_rate = !empty($vehicle['hourly_rate']) && $vehicle['hourly_rate'] > 0 
+            ? $vehicle['hourly_rate'] 
+            : (!empty($vehicle['rate_per_day']) ? $vehicle['rate_per_day'] / 24 : 300);
+        $vehicle_cost = $hourly_rate * ceil($duration_hours);
+        $rental_type = 'hourly';
+    }
+    
+    // Location charges
+    $location_rates = [
         'gensan-airport' => 500,
         'downtown-gensan' => 300,
         'kcc-mall' => 500,
         'robinsons-place' => 400,
-        'sm-city-gensan' => 400
+        'sm-city-gensan' => 400,
+        'store' => 0
     ];
-
-    // Function to calculate location charges
-    function calculateLocationCharges($pickupLocation, $returnLocation, $locationPricing) {
-        $pickupCharge = $locationPricing[$pickupLocation] ?? 0;
-        $returnCharge = 0;
-        
-        // Only charge for return location if it's specified AND different from pickup
-        if (!empty($returnLocation) && trim($returnLocation) !== '' && $returnLocation !== $pickupLocation) {
-            $returnCharge = $locationPricing[$returnLocation] ?? 0;
-        }
-        
-        return [
-            'pickupCharge' => $pickupCharge,
-            'returnCharge' => $returnCharge,
-            'totalLocationCharge' => $pickupCharge + $returnCharge
-        ];
+    
+    $pickup_charge = $location_rates[$data['pickup_location']] ?? 0;
+    $return_charge = 0;
+    
+    if (!empty($data['return_location']) && $data['return_location'] !== $data['pickup_location']) {
+        $return_charge = $location_rates[$data['return_location']] ?? 0;
     }
-
-    // Function to sanitize user input
-    function sanitize_input($data) {
-        if ($data === null) return '';
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data);
-        return $data;
+    
+    $location_cost = $pickup_charge + $return_charge;
+    $total_cost = $vehicle_cost + $location_cost;
+    
+    logDebug("Cost calculation: Vehicle=$vehicle_cost, Location=$location_cost, Total=$total_cost");
+    
+    // Generate unique booking reference
+    $year = date("Y");
+    $reference_query = "SELECT booking_reference FROM bookings WHERE booking_reference LIKE 'BK{$year}%' ORDER BY booking_id DESC LIMIT 1";
+    $ref_result = $conn->query($reference_query);
+    
+    $last_number = 0;
+    if ($ref_result && $ref_result->num_rows > 0) {
+        $last_ref = $ref_result->fetch_assoc()['booking_reference'];
+        $last_number = (int)substr($last_ref, -4);
     }
-
-    // Sanitize all inputs with better null handling
-    $customer_name = sanitize_input($_POST['customer_name'] ?? '');
-    $customer_phone = sanitize_input($_POST['customer_phone'] ?? '');
-    $customer_email = sanitize_input($_POST['customer_email'] ?? '');
-    $license_number = sanitize_input($_POST['license_number'] ?? '');
-    $pickup_date = sanitize_input($_POST['start_date'] ?? '');
-    $return_date = sanitize_input($_POST['end_date'] ?? '');
-    $pickup_time = sanitize_input($_POST['start_time'] ?? '');
-    $return_time = sanitize_input($_POST['end_time'] ?? '');
-    $pickup_location = sanitize_input($_POST['pickup_location'] ?? '');
-    $return_location_raw = sanitize_input($_POST['return_location'] ?? '');
-    $return_location = (!empty($return_location_raw) && trim($return_location_raw) !== '') ? $return_location_raw : '';
-    $purpose = sanitize_input($_POST['purpose'] ?? '');
-    $passengers = sanitize_input($_POST['passengers'] ?? '1');
-    $selected_vehicle = sanitize_input($_POST['selected_vehicle'] ?? '');
-    $rental_duration = !empty($_POST['rental_duration']) ? (int)sanitize_input($_POST['rental_duration']) : null;
-
-    error_log("Sanitized input data:");
-    error_log("Customer: $customer_name, $customer_email, $customer_phone");
-    error_log("Vehicle: $selected_vehicle");
-    error_log("Dates: $pickup_date to $return_date");
-    error_log("Locations: pickup=$pickup_location, return=$return_location");
-
+    
+    $booking_reference = "BK" . $year . str_pad($last_number + 1, 4, '0', STR_PAD_LEFT);
+    
     // Handle file upload
     $uploaded_document = null;
     if (isset($_FILES['upload_image']) && $_FILES['upload_image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = 'uploads/';
+        $upload_dir = 'uploads/documents/';
+        
+        // Create upload directory if it doesn't exist
         if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
-        }
-
-        $file_extension = pathinfo($_FILES['upload_image']['name'], PATHINFO_EXTENSION);
-        $new_filename = uniqid() . '.' . $file_extension;
-        $uploaded_document = $upload_dir . $new_filename;
-
-        if (!move_uploaded_file($_FILES['upload_image']['tmp_name'], $uploaded_document)) {
-            $uploaded_document = null;
-            error_log("Failed to move uploaded file");
-        } else {
-            error_log("File uploaded successfully: $uploaded_document");
-        }
-    }
-
-    // Validate required fields
-    $missing_fields = [];
-    if (empty($customer_name)) $missing_fields[] = 'Full Name';
-    if (empty($customer_phone)) $missing_fields[] = 'Phone Number';
-    if (empty($customer_email)) $missing_fields[] = 'Email Address';
-    if (empty($pickup_date)) $missing_fields[] = 'Pickup Date';
-    if (empty($return_date)) $missing_fields[] = 'Return Date';
-    if (empty($pickup_time)) $missing_fields[] = 'Pickup Time';
-    if (empty($return_time)) $missing_fields[] = 'Return Time';
-    if (empty($pickup_location)) $missing_fields[] = 'Pickup Location';
-    if (empty($selected_vehicle)) $missing_fields[] = 'Selected Vehicle';
-
-    if (!empty($missing_fields)) {
-        http_response_code(400);
-        echo json_encode([
-            'status' => 'error', 
-            'message' => 'Missing required fields: ' . implode(', ', $missing_fields)
-        ]);
-        exit;
-    }
-
-    // Validate email format
-    if (!filter_var($customer_email, FILTER_VALIDATE_EMAIL)) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Please enter a valid email address.']);
-        exit;
-    }
-
-    // Generate booking reference
-    $year = date("Y");
-    $sql_last_ref = "SELECT booking_reference FROM bookings WHERE booking_reference LIKE 'BK{$year}%' ORDER BY booking_id DESC LIMIT 1";
-    $result = $conn->query($sql_last_ref);
-    $last_number = 0;
-    if ($result && $result->num_rows > 0) {
-        $last_ref = $result->fetch_assoc()['booking_reference'];
-        $last_number = (int)substr($last_ref, -4);
-    }
-    $new_number = $last_number + 1;
-    $booking_reference = "BK" . $year . str_pad($new_number, 4, '0', STR_PAD_LEFT);
-    error_log("Generated booking reference: $booking_reference");
-
-    // Get vehicle data
-    $sql_cars = "SELECT car_id, car_name, rate_per_day, hourly_rate, rate_6h, rate_8h, rate_12h, rate_24h, status FROM cars WHERE car_name = ? LIMIT 1";
-    $stmt_cars = $conn->prepare($sql_cars);
-    if (!$stmt_cars) {
-        error_log("Vehicle query prepare failed: " . $conn->error);
-        throw new Exception("Database error while preparing vehicle query: " . $conn->error);
-    }
-    
-    $stmt_cars->bind_param("s", $selected_vehicle);
-    if (!$stmt_cars->execute()) {
-        error_log("Vehicle query execute failed: " . $stmt_cars->error);
-        throw new Exception("Database error while executing vehicle query: " . $stmt_cars->error);
-    }
-    
-    $result_cars = $stmt_cars->get_result();
-
-    if ($result_cars->num_rows === 0) {
-        error_log("Vehicle not found: $selected_vehicle");
-        http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'Selected vehicle not found: ' . $selected_vehicle]);
-        exit;
-    }
-
-    $car_data = $result_cars->fetch_assoc();
-    $car_id = $car_data['car_id'];
-    $rate_per_day = floatval($car_data['rate_per_day']);
-    $hourly_rate = floatval($car_data['hourly_rate']);
-    $rate_6h = floatval($car_data['rate_6h']) ?: 0;
-    $rate_8h = floatval($car_data['rate_8h']) ?: 0;
-    $rate_12h = floatval($car_data['rate_12h']) ?: 0;
-    $rate_24h = floatval($car_data['rate_24h']) ?: $rate_per_day;
-    $stmt_cars->close();
-
-    error_log("Vehicle data found - ID: $car_id, Rates: daily=$rate_per_day, hourly=$hourly_rate, 24h=$rate_24h");
-
-    // Check for overlapping bookings
-    $sql_check_overlap = "SELECT booking_id, booking_reference FROM bookings 
-                          WHERE car_id = ? 
-                          AND status IN ('pending', 'confirmed', 'active', 'approved')
-                          AND NOT (
-                              CONCAT(end_date, ' ', return_time) <= CONCAT(?, ' ', ?) OR
-                              CONCAT(start_date, ' ', pickup_time) >= CONCAT(?, ' ', ?)
-                          )";
-    $stmt_overlap = $conn->prepare($sql_check_overlap);
-    if (!$stmt_overlap) {
-        error_log("Overlap check prepare failed: " . $conn->error);
-        throw new Exception("Database error while preparing overlap check: " . $conn->error);
-    }
-    
-    $stmt_overlap->bind_param("issss", 
-        $car_id, 
-        $pickup_date, $pickup_time,
-        $return_date, $return_time
-    );
-    
-    if (!$stmt_overlap->execute()) {
-        error_log("Overlap check execute failed: " . $stmt_overlap->error);
-        throw new Exception("Database error while checking for conflicts: " . $stmt_overlap->error);
-    }
-    
-    $result_overlap = $stmt_overlap->get_result();
-
-    if ($result_overlap->num_rows > 0) {
-        $conflict = $result_overlap->fetch_assoc();
-        error_log("Booking conflict found: " . $conflict['booking_reference']);
-        http_response_code(400);
-        echo json_encode([
-            'status' => 'error', 
-            'message' => 'This vehicle is already booked for the selected dates.',
-            'conflict_booking' => $conflict['booking_reference']
-        ]);
-        $stmt_overlap->close();
-        exit;
-    }
-    $stmt_overlap->close();
-    error_log("No booking conflicts found");
-
-    // Calculate rental duration and cost
-    $start_datetime_str = "{$pickup_date} {$pickup_time}";
-    $end_datetime_str = "{$return_date} {$return_time}";
-
-    $start_datetime = new DateTime($start_datetime_str);
-    $end_datetime = new DateTime($end_datetime_str);
-
-    // Validate dates
-    if ($start_datetime < new DateTime() || $end_datetime < $start_datetime) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid pickup or return date/time.']);
-        exit;
-    }
-
-    // Calculate total hours
-    $interval = $end_datetime->getTimestamp() - $start_datetime->getTimestamp();
-    $calculated_hours = abs($interval) / 3600;
-
-    if ($calculated_hours < 8) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Minimum rental period is 8 hours.']);
-        exit;
-    }
-
-    $total_hours = $calculated_hours;
-    $rental_type = 'hourly';
-
-    if ($rental_duration && $rental_duration >= 8) {
-        $total_hours = $rental_duration;
-    }
-
-    if ($total_hours >= 24) {
-        $rental_type = 'daily';
-    }
-
-    error_log("Calculated hours: $total_hours, Type: $rental_type");
-
-    // Calculate vehicle cost
-    $billable_hours = max($total_hours, 8);
-
-    if ($billable_hours >= 24 && $rate_24h > 0) {
-        $days = ceil($billable_hours / 24);
-        $vehicle_cost = $rate_24h * $days;
-        error_log("Using 24h rate: $rate_24h x $days days = $vehicle_cost");
-    } elseif ($billable_hours >= 12 && $billable_hours < 24 && $rate_12h > 0) {
-        $vehicle_cost = $rate_12h;
-        error_log("Using 12h rate: $rate_12h");
-    } elseif ($billable_hours >= 8 && $billable_hours < 12 && $rate_8h > 0) {
-        $vehicle_cost = $rate_8h;
-        error_log("Using 8h rate: $rate_8h");
-    } elseif ($billable_hours >= 6 && $billable_hours < 8 && $rate_6h > 0) {
-        $vehicle_cost = $rate_6h;
-        error_log("Using 6h rate: $rate_6h");
-    } else {
-        if ($billable_hours >= 24) {
-            $days = ceil($billable_hours / 24);
-            $vehicle_cost = $rate_per_day * $days;
-            error_log("Using daily rate: $rate_per_day x $days days = $vehicle_cost");
-        } else {
-            $effective_hourly_rate = $hourly_rate > 0 ? $hourly_rate : 250;
-            $vehicle_cost = $effective_hourly_rate * ceil($billable_hours);
-            error_log("Using hourly rate: $effective_hourly_rate x " . ceil($billable_hours) . " hours = $vehicle_cost");
-        }
-    }
-
-    // Calculate location charges
-    $location_charges = calculateLocationCharges($pickup_location, $return_location, $locationPricing);
-    $total_cost = $vehicle_cost + $location_charges['totalLocationCharge'];
-
-    error_log("Cost breakdown - Vehicle: $vehicle_cost, Location: {$location_charges['totalLocationCharge']}, Total: $total_cost");
-
-    // Get or create user
-    $sql_user = "SELECT user_id FROM users WHERE email = ? LIMIT 1";
-    $stmt_user = $conn->prepare($sql_user);
-    if (!$stmt_user) {
-        error_log("User query prepare failed: " . $conn->error);
-        throw new Exception("Database error while preparing user query: " . $conn->error);
-    }
-    
-    $stmt_user->bind_param("s", $customer_email);
-    if (!$stmt_user->execute()) {
-        error_log("User query execute failed: " . $stmt_user->error);
-        throw new Exception("Database error while checking user: " . $stmt_user->error);
-    }
-    
-    $result_user = $stmt_user->get_result();
-
-    if ($result_user->num_rows === 0) {
-        error_log("Creating new user for: $customer_email");
-        $sql_create_user = "INSERT INTO users (name, email, phone, created_at) VALUES (?, ?, ?, NOW())";
-        $stmt_create = $conn->prepare($sql_create_user);
-        if (!$stmt_create) {
-            error_log("Create user prepare failed: " . $conn->error);
-            throw new Exception("Database error while preparing user creation: " . $conn->error);
+            if (!mkdir($upload_dir, 0755, true)) {
+                logDebug("Failed to create upload directory: $upload_dir");
+                sendError("Failed to create upload directory");
+            }
         }
         
-        $stmt_create->bind_param("sss", $customer_name, $customer_email, $customer_phone);
-
-        if (!$stmt_create->execute()) {
-            error_log("Create user execute failed: " . $stmt_create->error);
-            throw new Exception("Error creating user account: " . $stmt_create->error);
+        $file_info = $_FILES['upload_image'];
+        $file_extension = strtolower(pathinfo($file_info['name'], PATHINFO_EXTENSION));
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'pdf', 'gif'];
+        
+        if (in_array($file_extension, $allowed_extensions)) {
+            $new_filename = uniqid('doc_') . '.' . $file_extension;
+            $upload_path = $upload_dir . $new_filename;
+            
+            if (move_uploaded_file($file_info['tmp_name'], $upload_path)) {
+                $uploaded_document = $upload_path;
+                logDebug("File uploaded successfully: $upload_path");
+            } else {
+                logDebug("Failed to move uploaded file");
+                sendError("Failed to save uploaded file");
+            }
+        } else {
+            sendError("Invalid file type. Only JPG, PNG, PDF, and GIF files are allowed.");
         }
-
-        $user_id = $conn->insert_id;
-        $stmt_create->close();
-        error_log("New user created with ID: $user_id");
-    } else {
-        $user_id = $result_user->fetch_assoc()['user_id'];
-        error_log("Existing user found with ID: $user_id");
     }
-    $stmt_user->close();
-
-    // Determine final return location
-    $final_return_location = !empty($return_location) ? $return_location : $pickup_location;
-
-    // START TRANSACTION
+    
+    // Start database transaction
     $conn->begin_transaction();
-    error_log("Transaction started");
-
+    
     try {
-        // Insert booking with correct column names matching your table structure
-        $sql_insert = "INSERT INTO bookings (
-            booking_reference, user_id, car_id, customer_name, customer_phone, 
-            customer_email, license_number, start_date, end_date, pickup_time, 
-            return_time, pickup_location, return_location, purpose, passengers, 
-            total_cost, rental_type, rental_duration_hours, total_hours, 
-            uploaded_document, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())";
-
-        $stmt_insert = $conn->prepare($sql_insert);
-        if (!$stmt_insert) {
-            error_log("Insert booking prepare failed: " . $conn->error);
-            throw new Exception("Database error while preparing booking insertion: " . $conn->error);
+        // Insert booking record
+        $insert_query = "INSERT INTO bookings (
+            car_id, customer_name, customer_phone, customer_email, license_number,
+            booking_reference, start_date, end_date, start_time, end_time,
+            pickup_location, return_location, purpose, passengers, status,
+            total_cost, rental_type, total_hours, uploaded_document,
+            pickup_time, return_time, created_at, updated_at
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending',
+            ?, ?, ?, ?, ?, ?, NOW(), NOW()
+        )";
+        
+        $stmt = $conn->prepare($insert_query);
+        
+        if (!$stmt) {
+            throw new Exception("Prepare statement failed: " . $conn->error);
         }
-
-        $rental_duration_hours = $rental_duration ? (int)$rental_duration : null;
-
-        $stmt_insert->bind_param(
-            "siissssssssssidsdds",
-            $booking_reference, $user_id, $car_id, $customer_name,
-            $customer_phone, $customer_email, $license_number, $pickup_date, 
-            $return_date, $pickup_time, $return_time, $pickup_location, 
-            $final_return_location, $purpose, $passengers, $total_cost,
-            $rental_type, $rental_duration_hours, $total_hours, $uploaded_document
+        
+        // Set return location to pickup location if not specified
+        $final_return_location = !empty($data['return_location']) ? $data['return_location'] : $data['pickup_location'];
+        
+        $stmt->bind_param(
+            "isssssssssssiddsssss",
+            $vehicle['car_id'],          // car_id
+            $data['customer_name'],      // customer_name
+            $data['customer_phone'],     // customer_phone
+            $data['customer_email'],     // customer_email
+            $data['license_number'],     // license_number
+            $booking_reference,          // booking_reference
+            $data['start_date'],         // start_date
+            $data['end_date'],           // end_date
+            $data['start_time'],         // start_time
+            $data['end_time'],           // end_time
+            $data['pickup_location'],    // pickup_location
+            $final_return_location,      // return_location
+            $data['purpose'],            // purpose
+            $data['passengers'],         // passengers
+            $total_cost,                 // total_cost
+            $rental_type,                // rental_type
+            $duration_hours,             // total_hours
+            $uploaded_document,          // uploaded_document
+            $data['start_time'],         // pickup_time
+            $data['end_time']            // return_time
         );
-
-        if (!$stmt_insert->execute()) {
-            error_log("Insert booking execute failed: " . $stmt_insert->error);
-            throw new Exception("Error saving booking: " . $stmt_insert->error);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Execute failed: " . $stmt->error);
         }
-
+        
         $booking_id = $conn->insert_id;
-        error_log("Booking inserted with ID: $booking_id");
-
-        // Update vehicle status to unavailable
-        $sql_update_vehicle = "UPDATE cars SET status = 0 WHERE car_id = ?";
-        $stmt_update = $conn->prepare($sql_update_vehicle);
-        if (!$stmt_update) {
-            error_log("Vehicle update prepare failed: " . $conn->error);
-            throw new Exception("Database error while preparing vehicle update: " . $conn->error);
-        }
-
-        $stmt_update->bind_param("i", $car_id);
-        if (!$stmt_update->execute()) {
-            error_log("Vehicle update execute failed: " . $stmt_update->error);
-            throw new Exception("Error updating vehicle availability: " . $stmt_update->error);
-        }
-        $stmt_update->close();
-
+        $stmt->close();
+        
         // Commit transaction
         $conn->commit();
-        error_log("Transaction committed successfully");
-
-        // Prepare success response
-        $response_data = [
-            'status' => 'success', 
-            'message' => 'Your booking has been successfully submitted and is pending approval!',
+        
+        logDebug("Booking successfully created: ID=$booking_id, Reference=$booking_reference");
+        
+        // Send success response
+        sendSuccess([
+            'message' => 'Your booking request has been submitted successfully! We will contact you within 24 hours to confirm your reservation.',
             'booking_reference' => $booking_reference,
             'booking_id' => $booking_id,
-            'vehicle_cost' => number_format($vehicle_cost, 2),
-            'location_charges' => number_format($location_charges['totalLocationCharge'], 2),
+            'vehicle' => $data['selected_vehicle'],
             'total_cost' => number_format($total_cost, 2),
-            'total_hours' => round($total_hours, 2),
+            'vehicle_cost' => number_format($vehicle_cost, 2),
+            'location_cost' => number_format($location_cost, 2),
+            'total_hours' => round($duration_hours, 2),
             'rental_type' => $rental_type,
-            'vehicle' => $selected_vehicle,
-            'pickup_date' => $pickup_date,
-            'return_date' => $return_date,
-            'pickup_time' => $pickup_time,
-            'return_time' => $return_time,
-            'pickup_location' => $pickup_location,
-            'return_location' => $final_return_location,
-            'same_location' => empty($return_location),
-            'booking_status' => 'pending'
-        ];
-
-        error_log("Success response prepared: " . json_encode($response_data));
-        http_response_code(200);
-        echo json_encode($response_data);
-
-        $stmt_insert->close();
-
+            'pickup_date' => $data['start_date'],
+            'return_date' => $data['end_date'],
+            'pickup_time' => $data['start_time'],
+            'return_time' => $data['end_time'],
+            'pickup_location' => $data['pickup_location'],
+            'return_location' => $final_return_location
+        ]);
+        
     } catch (Exception $e) {
+        // Rollback transaction on error
         $conn->rollback();
-        error_log("Transaction rolled back due to error: " . $e->getMessage());
+        logDebug("Transaction rolled back: " . $e->getMessage());
         throw $e;
     }
-
-} catch (Exception $e) {
-    error_log("=== BOOKING ERROR ===");
-    error_log("Error: " . $e->getMessage());
-    error_log("File: " . $e->getFile() . " Line: " . $e->getLine());
-    error_log("Stack trace: " . $e->getTraceAsString());
     
-    http_response_code(500);
-    echo json_encode([
-        'status' => 'error', 
-        'message' => $e->getMessage(),
-        'debug_info' => [
-            'file' => basename($e->getFile()),
-            'line' => $e->getLine()
-        ]
-    ]);
+} catch (Exception $e) {
+    logDebug("FATAL ERROR: " . $e->getMessage() . " in " . $e->getFile() . " line " . $e->getLine());
+    sendError("An error occurred while processing your booking: " . $e->getMessage());
 } finally {
-    if (isset($conn) && $conn) {
+    // Close database connection
+    if (isset($conn) && $conn instanceof mysqli) {
         $conn->close();
-        error_log("Database connection closed");
     }
+    logDebug("=== BOOKING REQUEST ENDED ===");
 }
-
-error_log("=== BOOKING SCRIPT ENDED ===");
 ?>
